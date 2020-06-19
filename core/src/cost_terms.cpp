@@ -36,6 +36,9 @@
 
 #include <moveit/task_constructor/cost_terms.h>
 #include <moveit/robot_trajectory/robot_trajectory.h>
+#include <moveit/planning_scene/planning_scene.h>
+
+#include <moveit/collision_detection/collision_common.h>
 
 namespace moveit {
 namespace task_constructor {
@@ -43,6 +46,23 @@ namespace cost {
 
 double PathLengthCost(const SubTrajectory& s) {
 	return s.trajectory() ? s.trajectory()->getDuration() : 0.0;
+}
+
+double ClearanceCost(const SubTrajectory& s) {
+	collision_detection::DistanceRequest request;
+	request.type = collision_detection::DistanceRequestType::GLOBAL;
+	request.group_name =
+	    s.start()->properties().get<std::string>("group");  // TODO: possibly parameterize hardcoded property name?
+	request.enableGroup(s.start()->scene()->getRobotModel());
+
+	collision_detection::DistanceResult result;
+
+	s.start()->scene()->getCollisionEnv()->distanceSelf(request, result, s.start()->scene()->getCurrentState());
+
+	if (result.minimum_distance.distance <= 0)
+		return std::numeric_limits<double>::infinity();
+	else
+		return 1.0 / (result.minimum_distance.distance + 1e-5);
 }
 }
 }
