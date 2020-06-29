@@ -35,6 +35,8 @@
 /* Authors: Michael Goerner */
 
 #include <moveit/task_constructor/cost_terms.h>
+#include <moveit/task_constructor/stage.h>
+
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include <moveit/planning_scene/planning_scene.h>
 
@@ -51,8 +53,14 @@ double PathLengthCost(const SubTrajectory& s) {
 double ClearanceCost(const SubTrajectory& s) {
 	collision_detection::DistanceRequest request;
 	request.type = collision_detection::DistanceRequestType::GLOBAL;
-	request.group_name =
-	    s.start()->properties().get<std::string>("group");  // TODO: possibly parameterize hardcoded property name?
+
+	// TODO: possibly parameterize hardcoded property name?
+	const std::string group{ "group" };
+	auto& state_properties{ s.start()->properties() };
+	auto& stage_properties{ s.creator()->properties() };
+	request.group_name = state_properties.hasProperty(group) ? state_properties.get<std::string>(group) :
+	                                                           stage_properties.get<std::string>(group);
+
 	request.enableGroup(s.start()->scene()->getRobotModel());
 
 	collision_detection::DistanceResult result;
