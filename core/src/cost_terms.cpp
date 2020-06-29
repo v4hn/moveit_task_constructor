@@ -68,10 +68,17 @@ double ClearanceCost(const SubTrajectory& s) {
 
 	s.start()->scene()->getCollisionEnv()->distanceSelf(request, result, s.start()->scene()->getCurrentState());
 
-	if (result.minimum_distance.distance <= 0)
+	if (result.minimum_distance.distance <= 0) {
+		// TODO: this should be a comment in the solution
+		ROS_ERROR_STREAM_NAMED("ClearanceCost", "allegedly valid solution has an unwanted collide between '"
+		                                            << result.minimum_distance.link_names[0] << "' and '"
+		                                            << result.minimum_distance.link_names[1] << "'");
 		return std::numeric_limits<double>::infinity();
-	else
+	} else {
+		// ROS_INFO_STREAM_NAMED("ClearanceCost", result.minimum_distance.link_names[0] << " has distance " <<
+		// result.minimum_distance.distance << " to " << result.minimum_distance.link_names[1]);
 		return 1.0 / (result.minimum_distance.distance + 1e-5);
+	}
 }
 }
 }
