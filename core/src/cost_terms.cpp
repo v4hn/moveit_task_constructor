@@ -62,6 +62,7 @@ double ClearanceCost(const SubTrajectory& s) {
 	                                                           stage_properties.get<std::string>(group);
 
 	request.enableGroup(s.start()->scene()->getRobotModel());
+	request.acm = &s.start()->scene()->getAllowedCollisionMatrix();
 
 	collision_detection::DistanceResult result;
 
