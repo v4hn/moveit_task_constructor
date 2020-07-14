@@ -53,9 +53,13 @@ namespace task_constructor {
 
 namespace {
 std::string getProcessId() {
-	char our_hostname[256] = { 0 };
-	gethostname(our_hostname, sizeof(our_hostname) - 1);
-	return std::to_string(getpid()) + "@" + our_hostname;
+	if (ros::isInitialized()) {
+		return ros::this_node::getName();
+	} else {
+		char our_hostname[256] = { 0 };
+		gethostname(our_hostname, sizeof(our_hostname) - 1);
+		return std::to_string(getpid()) + "@" + our_hostname;
+	}
 }
 }  // namespace
 
