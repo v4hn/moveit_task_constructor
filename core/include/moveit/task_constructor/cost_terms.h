@@ -51,7 +51,7 @@ struct Constant
 public:
 	Constant(double c) : cost(c) {}
 
-	double operator()(const SubTrajectory&) { return cost; }
+	double operator()(const SubTrajectory&) const { return cost; }
 
 	double cost;
 };
@@ -66,7 +66,7 @@ struct LinkMotion
 {
 	LinkMotion(std::string link_name) : link_name(link_name) {}
 
-	double operator()(const SubTrajectory&, std::string&);
+	double operator()(const SubTrajectory&, std::string&) const;
 
 	std::string link_name;
 };
@@ -85,7 +85,7 @@ struct Clearance
 	          Interface::Direction interface = Interface::NONE)
 	  : with_world(with_world), group_property(group_property), interface(interface) {}
 
-	double operator()(const SubTrajectory& s, std::string& comment);
+	double operator()(const SubTrajectory& s, std::string& comment) const;
 
 	bool with_world;
 	bool cumulative;
