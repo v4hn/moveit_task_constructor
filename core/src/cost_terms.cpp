@@ -82,7 +82,7 @@ double LinkMotion::operator()(const SubTrajectory& s, std::string& comment) {
 	for (size_t i{ 1 }; i < traj->getWayPointCount(); ++i) {
 		Eigen::Translation3d new_position{ traj->getWayPoint(i).getFrameTransform(link_name).translation() };
 		distance += (new_position.vector() - position.vector()).norm();
-		position = new_position;
+		std::swap(position, new_position);
 	}
 	return distance;
 }
