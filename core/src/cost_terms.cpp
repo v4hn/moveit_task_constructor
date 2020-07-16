@@ -74,6 +74,7 @@ double LinkMotion::operator()(const SubTrajectory& s, std::string& comment) {
 		boost::format desc("LinkMotionCost: frame '%1%' unknown in trajectory");
 		desc % link_name;
 		comment = desc.str();
+		return std::numeric_limits<double>::infinity();
 	}
 
 	double distance{ 0.0 };
