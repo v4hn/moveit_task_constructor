@@ -88,7 +88,7 @@ double LinkMotion::operator()(const SubTrajectory& s, std::string& comment) cons
 }
 
 double Clearance::operator()(const SubTrajectory& s, std::string& comment) const {
-	const std::string NAME{ "Clearance: " };
+	const std::string PREFIX{ "Clearance: " };
 
 	collision_detection::DistanceRequest request;
 	request.type =
@@ -133,7 +133,7 @@ double Clearance::operator()(const SubTrajectory& s, std::string& comment) const
 	} };
 
 	auto collision_comment{ [=](auto& distance) {
-		boost::format desc{ NAME + ": allegedly valid solution collides between '%1%' and '%2%'" };
+		boost::format desc{ PREFIX + "allegedly valid solution collides between '%1%' and '%2%'" };
 		desc % distance.link_names[0] % distance.link_names[1];
 		return desc.str();
 	} };
@@ -149,11 +149,11 @@ double Clearance::operator()(const SubTrajectory& s, std::string& comment) const
 		}
 		distance = distance_data.distance;
 		if (!cumulative) {
-			boost::format desc{ NAME + ": distance %1% between '%2%' and '%3%'" };
+			boost::format desc{ PREFIX + "distance %1% between '%2%' and '%3%'" };
 			desc % distance % distance_data.link_names[0] % distance_data.link_names[1];
 			comment = desc.str();
 		} else {
-			comment = NAME + ": cumulative distance " + std::to_string(distance);
+			comment = PREFIX + "cumulative distance " + std::to_string(distance);
 		}
 	} else {  // check trajectory
 		for (size_t i = 0; i < s.trajectory()->getWayPointCount(); ++i) {
@@ -166,7 +166,7 @@ double Clearance::operator()(const SubTrajectory& s, std::string& comment) const
 		}
 		distance /= s.trajectory()->getWayPointCount();
 
-		boost::format desc(NAME + ": average%1% distance: %2%");
+		boost::format desc(PREFIX + "average%1% distance: %2%");
 		desc % (cumulative ? " cumulative" : "") % distance;
 		comment = desc.str();
 	}
