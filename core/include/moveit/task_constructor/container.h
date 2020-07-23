@@ -83,6 +83,8 @@ protected:
 };
 std::ostream& operator<<(std::ostream& os, const ContainerBase& stage);
 
+// TODO: add a LoopContainer(SerialContainer with dynamically repeating states
+
 class SerialContainerPrivate;
 /** SerialContainer allows to sequentially chain a set of child stages */
 class SerialContainer : public ContainerBase
