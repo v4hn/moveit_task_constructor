@@ -234,6 +234,7 @@ QVariant TaskListModel::headerData(int section, Qt::Orientation orientation, int
 QVariant TaskListModel::data(const QModelIndex& index, int role) const {
 	if (role == Qt::BackgroundRole && index.isValid() && index.row() == highlighted_row_index_.row() &&
 	    index.parent() == highlighted_row_index_.parent())
+		// TODO(v4hn): highlight container if tree is collapsed
 		return QColor(Qt::yellow);
 	return FlatMergeProxyModel::data(index, role);
 }
