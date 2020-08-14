@@ -710,6 +710,7 @@ void ConnectingPrivate::newState(Interface::iterator it, bool updated) {
 				break;
 			if (static_cast<Connecting*>(me_)->compatible(*it, *oit))
 				pending.insert(make_pair<other>(it, oit));
+			// TODO(v4hn): else optionally spawn failure with useful message
 		}
 	}
 }
