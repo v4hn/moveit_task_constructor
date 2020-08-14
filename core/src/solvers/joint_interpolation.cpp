@@ -78,6 +78,7 @@ bool JointInterpolationPlanner::plan(const planning_scene::PlanningSceneConstPtr
 		from_state.interpolate(to_state, t, waypoint);
 		result->addSuffixWayPoint(waypoint, t);
 
+		// TODO(v4hn): add collision markers to indicate collision
 		if (from->isStateColliding(waypoint, jmg->getName()))
 			return false;
 	}
