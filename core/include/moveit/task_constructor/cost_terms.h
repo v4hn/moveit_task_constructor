@@ -83,7 +83,7 @@ struct Clearance
 {
 	Clearance(bool with_world = true, bool cumulative = false, std::string group_property = "group",
 	          Interface::Direction interface = Interface::NONE)
-	  : with_world(with_world), group_property(group_property), interface(interface) {}
+	  : with_world(with_world), cumulative(cumulative), group_property(group_property), interface(interface) {}
 
 	double operator()(const SubTrajectory& s, std::string& comment) const;
 
