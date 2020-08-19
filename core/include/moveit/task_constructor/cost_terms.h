@@ -51,7 +51,7 @@ struct Constant
 public:
 	Constant(double c) : cost(c) {}
 
-	double operator()(const SubTrajectory&) const { return cost; }
+	double operator()(const SubTrajectory&, std::string& /* unused */) const { return cost; }
 
 	double cost;
 };
