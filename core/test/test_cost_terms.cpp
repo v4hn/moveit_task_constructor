@@ -167,6 +167,30 @@ public:
 	}
 };
 
+TEST(CostTerm, SetLambdaCostTerm) {
+	ros::console::set_logger_level(ROSCONSOLE_ROOT_LOGGER_NAME, ros::console::levels::Fatal);
+	const moveit::core::RobotModelConstPtr robot{ getModel() };
+
+	Standalone<SerialContainer> container(robot);
+	auto stage{ std::make_unique<GeneratorMockup>() };
+	stage->setCostTerm([](auto&&) { return 1.0; });
+	container.computeWithStages({ std::move(stage) });
+	EXPECT_EQ(container.solutions().front()->cost(), 1.0) << "can use simple lambda signature";
+
+	stage = std::make_unique<GeneratorMockup>();
+	stage->setCostTerm([](auto&&, auto&&) { return 1.0; });
+	container.computeWithStages({ std::move(stage) });
+	EXPECT_EQ(container.solutions().front()->cost(), 1.0) << "can use full lambda signature";
+
+	stage = std::make_unique<GeneratorMockup>();
+	stage->setCostTerm([](auto&&, auto&& comment) {
+		comment = "I want the user to see this";
+		return 1.0;
+	});
+	container.computeWithStages({ std::move(stage) });
+	EXPECT_EQ(container.solutions().front()->cost(), 1.0) << "can write to comment";
+}
+
 TEST(CostTerm, CostOverwrite) {
 	ros::console::set_logger_level(ROSCONSOLE_ROOT_LOGGER_NAME, ros::console::levels::Fatal);
 	const moveit::core::RobotModelConstPtr robot{ getModel() };
@@ -248,8 +272,7 @@ TEST(CostTerm, ForwardCanModifyCost) {
 	auto stage{ std::make_unique<BackwardMockup>() };
 	cost::Constant constant{ 8.0 };
 	stage->setCostTerm(constant);
-	container.setCostTerm(static_cast<std::function<double(const SubTrajectory&)>>(
-	    [](const SubTrajectory& s) { return s.cost() * s.cost(); }));
+	container.setCostTerm([](auto&& s) { return s.cost() * s.cost(); });
 
 	container.computeWithStages({ std::move(stage) });
 	auto& wrapped{ dynamic_cast<const WrappedSolution&>(*container.solutions().front()) };
