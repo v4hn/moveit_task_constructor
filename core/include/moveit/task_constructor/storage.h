@@ -221,7 +221,7 @@ public:
 		setStartStateUnsafe(state);
 	}
 
-	/** set the solution's start_state_
+	/** set the solution's end_state_
 	 *
 	 * Must not be used with different states because it registers the solution with the state as well.
 	 */
