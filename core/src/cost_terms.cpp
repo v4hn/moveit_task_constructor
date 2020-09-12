@@ -177,7 +177,7 @@ double Clearance::compute(const SubTrajectory& s, std::string& comment) const {
 		return result.minimum_distance;
 	} };
 
-	auto collision_comment{ [=](auto& distance) {
+	auto collision_comment{ [=](const auto& distance) {
 		boost::format desc{ PREFIX + "allegedly valid solution collides between '%1%' and '%2%'" };
 		desc % distance.link_names[0] % distance.link_names[1];
 		return desc.str();
