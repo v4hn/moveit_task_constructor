@@ -32,7 +32,10 @@ public:
 		pimpl()->setNextStarts(next);
 	}
 
-	void init(const moveit::core::RobotModelConstPtr& robot_model) override { ps.reset(new PlanningScene(robot_model)); }
+	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
+		ps.reset(new PlanningScene(robot_model));
+		Generator::init(robot_model);
+	}
 
 	bool canCompute() const override { return true; }
 
@@ -60,7 +63,10 @@ class ForwardMockup : public PropagatingForward
 public:
 	using PropagatingForward::PropagatingForward;
 
-	void init(const moveit::core::RobotModelConstPtr& robot_model) override { ps.reset(new PlanningScene(robot_model)); }
+	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
+		ps.reset(new PlanningScene(robot_model));
+		PropagatingForward::init(robot_model);
+	}
 
 	void computeForward(const InterfaceState& from) override {
 		SubTrajectory solution;
