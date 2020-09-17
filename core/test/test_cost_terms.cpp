@@ -167,7 +167,7 @@ public:
 
 	void computeWithContainerCost(std::initializer_list<StageUniquePtr> stages, const CostTermPtr& cost_term) {
 		this->setCostTerm(cost_term);
-		computeWithStages(std::move(stages));
+		computeWithStages(stages);
 	}
 };
 
