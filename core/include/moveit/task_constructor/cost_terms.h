@@ -74,26 +74,26 @@ public:
 class LambdaCostTerm : public TrajectoryCostTerm
 {
 public:
-	using SubTrajectorySig = std::function<double(const SubTrajectory&, std::string&)>;
-	using SubTrajectoryShortSig = std::function<double(const SubTrajectory&)>;
+	using SubTrajectorySignature = std::function<double(const SubTrajectory&, std::string&)>;
+	using SubTrajectoryShortSignature = std::function<double(const SubTrajectory&)>;
 
 	// accept lambdas according to either signature above
-	template <typename Term, typename Sig = decltype(sigMatcher(std::declval<Term>()))>
-	LambdaCostTerm(const Term& t) : LambdaCostTerm{ Sig{ t } } {}
+	template <typename Term, typename Signature = decltype(signatureMatcher(std::declval<Term>()))>
+	LambdaCostTerm(const Term& t) : LambdaCostTerm{ Signature{ t } } {}
 
-	LambdaCostTerm(const SubTrajectorySig&);
-	LambdaCostTerm(const SubTrajectoryShortSig&);
+	LambdaCostTerm(const SubTrajectorySignature&);
+	LambdaCostTerm(const SubTrajectoryShortSignature&);
 
 	double operator()(const SubTrajectory& s, std::string& comment) const override;
 
 protected:
-	std::function<double(const SubTrajectory&, std::string&)> term_;
+	SubTrajectorySignature term_;
 
 private:
 	template <typename T>
-	static auto sigMatcher(const T& t) -> decltype(t(SubTrajectory{}), SubTrajectoryShortSig{});
+	static auto signatureMatcher(const T& t) -> decltype(t(SubTrajectory{}), SubTrajectoryShortSignature{});
 	template <typename T>
-	static auto sigMatcher(const T& t) -> decltype(t(SubTrajectory{}, std::string{}), SubTrajectorySig{});
+	static auto signatureMatcher(const T& t) -> decltype(t(SubTrajectory{}, std::string{}), SubTrajectorySignature{});
 };
 
 namespace cost {

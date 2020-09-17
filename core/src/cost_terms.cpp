@@ -77,10 +77,10 @@ double TrajectoryCostTerm::operator()(const WrappedSolution& s, std::string& com
 	return s.wrapped()->computeCost(*this, comment);
 }
 
-LambdaCostTerm::LambdaCostTerm(const SubTrajectorySig& term)
+LambdaCostTerm::LambdaCostTerm(const SubTrajectorySignature& term)
   : term_{ [term](const SolutionBase& s, std::string& c) { return term(static_cast<const SubTrajectory&>(s), c); } } {}
 
-LambdaCostTerm::LambdaCostTerm(const SubTrajectoryShortSig& term)
+LambdaCostTerm::LambdaCostTerm(const SubTrajectoryShortSignature& term)
   : term_{ [term](const SolutionBase& s, std::string&) { return term(static_cast<const SubTrajectory&>(s)); } } {}
 
 double LambdaCostTerm::operator()(const SubTrajectory& s, std::string& comment) const {
