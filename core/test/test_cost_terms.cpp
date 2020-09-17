@@ -192,7 +192,9 @@ TEST(CostTerm, SetLambdaCostTerm) {
 		return 1.0;
 	});
 	container.computeWithStages({ std::move(stage) });
-	EXPECT_EQ(container.solutions().front()->cost(), 1.0) << "can write to comment";
+	auto sol = std::dynamic_pointer_cast<const SolutionSequence>(container.solutions().front());
+	EXPECT_EQ(sol->cost(), 1.0);
+	EXPECT_EQ(sol->solutions()[0]->comment(), "I want the user to see this") << "can write to comment";
 }
 
 TEST(CostTerm, CostOverwrite) {
