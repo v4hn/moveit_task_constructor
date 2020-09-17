@@ -245,8 +245,10 @@ void StagePrivate::computeCost(const InterfaceState& from, const InterfaceState&
 	solution.setStartState(tmp_from);
 	solution.setEndState(tmp_to);
 
+	if (!cost_term_)
+		return;
+
 	std::string comment;
-	assert(cost_term_);
 	solution.setCost(solution.computeCost(*cost_term_, comment));
 
 	// If a comment was specified, add it to the solution
