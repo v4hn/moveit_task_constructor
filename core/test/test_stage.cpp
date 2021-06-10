@@ -6,45 +6,48 @@
 #include <moveit/planning_scene/planning_scene.h>
 #include <geometry_msgs/PoseStamped.h>
 
+#include "mockups.h"
 #include <ros/console.h>
 #include <gtest/gtest.h>
 
 using namespace moveit::task_constructor;
 using namespace planning_scene;
 
-class GeneratorMockup : public Generator
-{
-	PlanningScenePtr ps;
-	InterfacePtr prev;
-	InterfacePtr next;
+// unsigned int GeneratorMockup::id_ = 0;
 
-public:
-	GeneratorMockup() : Generator("generator") {
-		prev.reset(new Interface);
-		next.reset(new Interface);
-		pimpl()->setPrevEnds(prev);
-		pimpl()->setNextStarts(next);
-	}
+// class GeneratorMockup : public Generator
+//{
+//	PlanningScenePtr ps;
+//	InterfacePtr prev;
+//	InterfacePtr next;
 
-	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
-		ps.reset((new PlanningScene(robot_model)));
-		Generator::init(robot_model);
-	}
+// public:
+//	GeneratorMockup() : Generator("generator") {
+//		prev.reset(new Interface);
+//		next.reset(new Interface);
+//		pimpl()->setPrevEnds(prev);
+//		pimpl()->setNextStarts(next);
+//	}
 
-	bool canCompute() const override { return true; }
-	void compute() override {
-		InterfaceState state(ps);
-		state.properties().set("target_pose", geometry_msgs::PoseStamped());
-		spawn(std::move(state), 0.0);
-	}
-};
+//	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
+//		ps.reset((new PlanningScene(robot_model)));
+//		Generator::init(robot_model);
+//	}
 
-class ConnectMockup : public Connecting
-{
-public:
-	using Connecting::compatible;
-	void compute(const InterfaceState& from, const InterfaceState& to) override {}
-};
+//	bool canCompute() const override { return true; }
+//	void compute() override {
+//		InterfaceState state(ps);
+//		state.properties().set("target_pose", geometry_msgs::PoseStamped());
+//		spawn(std::move(state), 0.0);
+//	}
+//};
+
+// class ConnectMockup : public Connecting
+//{
+// public:
+//	using Connecting::compatible;
+//	void compute(const InterfaceState& from, const InterfaceState& to) override {}
+//};
 
 TEST(Stage, registerCallbacks) {
 	GeneratorMockup g;

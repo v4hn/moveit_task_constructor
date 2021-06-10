@@ -5,6 +5,7 @@
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/utils/robot_model_test_utils.h>
 
+#include "mockups.h"
 #include "models.h"
 #include <list>
 #include <memory>
@@ -13,91 +14,91 @@
 using namespace moveit::task_constructor;
 using namespace planning_scene;
 
-MOVEIT_STRUCT_FORWARD(PredefinedCosts);
-struct PredefinedCosts : CostTerm
-{
-	mutable std::list<double> costs_;  // list of costs to assign
-	mutable double cost_ = 0.0;  // last assigned cost
-	bool finite_;  // finite number of compute() attempts?
+// MOVEIT_STRUCT_FORWARD(PredefinedCosts);
+// struct PredefinedCosts : CostTerm
+//{
+//	mutable std::list<double> costs_;  // list of costs to assign
+//	mutable double cost_ = 0.0;  // last assigned cost
+//	bool finite_;  // finite number of compute() attempts?
 
-	PredefinedCosts(bool finite, std::list<double>&& costs) : costs_(std::move(costs)), finite_(finite) {}
-	bool exhausted() const { return finite_ && costs_.empty(); }
-	double cost() const {
-		if (!costs_.empty()) {
-			cost_ = costs_.front();
-			costs_.pop_front();
-		}
-		return cost_;
-	}
+//	PredefinedCosts(bool finite, std::list<double>&& costs) : costs_(std::move(costs)), finite_(finite) {}
+//	bool exhausted() const { return finite_ && costs_.empty(); }
+//	double cost() const {
+//		if (!costs_.empty()) {
+//			cost_ = costs_.front();
+//			costs_.pop_front();
+//		}
+//		return cost_;
+//	}
 
-	double operator()(const SubTrajectory& /*s*/, std::string& /*comment*/) const override { return cost(); }
-	double operator()(const SolutionSequence& /*s*/, std::string& /*comment*/) const override { return cost(); }
-	double operator()(const WrappedSolution& /*s*/, std::string& /*comment*/) const override { return cost(); }
-};
+//	double operator()(const SubTrajectory& /*s*/, std::string& /*comment*/) const override { return cost(); }
+//	double operator()(const SolutionSequence& /*s*/, std::string& /*comment*/) const override { return cost(); }
+//	double operator()(const WrappedSolution& /*s*/, std::string& /*comment*/) const override { return cost(); }
+//};
 
-/** Generator creating solutions with given costs */
-struct GeneratorMockup : Generator
-{
-	PlanningScenePtr ps_;
-	PredefinedCosts costs_;
-	static unsigned int id_;
+///** Generator creating solutions with given costs */
+// struct GeneratorMockup : Generator
+//{
+//	PlanningScenePtr ps_;
+//	PredefinedCosts costs_;
+//	static unsigned int id_;
 
-	GeneratorMockup(std::initializer_list<double> costs = { 0.0 })
-	  : Generator("GEN" + std::to_string(++id_)), costs_(true, costs) {}
+//	GeneratorMockup(std::initializer_list<double> costs = { 0.0 })
+//	  : Generator("GEN" + std::to_string(++id_)), costs_(true, costs) {}
 
-	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
-		ps_.reset(new PlanningScene(robot_model));
-		Generator::init(robot_model);
-	}
+//	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
+//		ps_.reset(new PlanningScene(robot_model));
+//		Generator::init(robot_model);
+//	}
 
-	bool canCompute() const override { return !costs_.exhausted(); }
-	void compute() override { spawn(InterfaceState(ps_), costs_.cost()); }
-};
+//	bool canCompute() const override { return !costs_.exhausted(); }
+//	void compute() override { spawn(InterfaceState(ps_), costs_.cost()); }
+//};
 
-struct PropagatorMockup : public PropagatingEitherWay
-{
-	PredefinedCosts costs_;
-	std::size_t solutions_per_compute_;
+// struct PropagatorMockup : public PropagatingEitherWay
+//{
+//	PredefinedCosts costs_;
+//	std::size_t solutions_per_compute_;
 
-	unsigned int calls_ = 0;
+//	unsigned int calls_ = 0;
 
-	PropagatorMockup(std::initializer_list<double> costs = { 0.0 }, std::size_t solutions_per_compute = 1)
-	  : PropagatingEitherWay(), costs_(false, costs), solutions_per_compute_(solutions_per_compute) {}
+//	PropagatorMockup(std::initializer_list<double> costs = { 0.0 }, std::size_t solutions_per_compute = 1)
+//	  : PropagatingEitherWay(), costs_(false, costs), solutions_per_compute_(solutions_per_compute) {}
 
-	void computeForward(const InterfaceState& from) override {
-		++calls_;
-		for (std::size_t i = 0; i < solutions_per_compute_; ++i) {
-			SubTrajectory solution(robot_trajectory::RobotTrajectoryConstPtr(), costs_.cost());
-			sendForward(from, InterfaceState(from.scene()->diff()), std::move(solution));
-		}
-	}
-	void computeBackward(const InterfaceState& to) override {
-		++calls_;
-		for (std::size_t i = 0; i < solutions_per_compute_; ++i) {
-			SubTrajectory solution(robot_trajectory::RobotTrajectoryConstPtr(), costs_.cost());
-			sendBackward(InterfaceState(to.scene()->diff()), to, std::move(solution));
-		}
-	}
-};
-struct ForwardMockup : public PropagatorMockup
-{
-	static unsigned int id_;
+//	void computeForward(const InterfaceState& from) override {
+//		++calls_;
+//		for (std::size_t i = 0; i < solutions_per_compute_; ++i) {
+//			SubTrajectory solution(robot_trajectory::RobotTrajectoryConstPtr(), costs_.cost());
+//			sendForward(from, InterfaceState(from.scene()->diff()), std::move(solution));
+//		}
+//	}
+//	void computeBackward(const InterfaceState& to) override {
+//		++calls_;
+//		for (std::size_t i = 0; i < solutions_per_compute_; ++i) {
+//			SubTrajectory solution(robot_trajectory::RobotTrajectoryConstPtr(), costs_.cost());
+//			sendBackward(InterfaceState(to.scene()->diff()), to, std::move(solution));
+//		}
+//	}
+//};
+// struct ForwardMockup : public PropagatorMockup
+//{
+//	static unsigned int id_;
 
-	ForwardMockup(std::initializer_list<double> costs = { 0.0 }, std::size_t solutions_per_compute = 1)
-	  : PropagatorMockup(costs, solutions_per_compute) {
-		restrictDirection(FORWARD);
-		setName("FW" + std::to_string(++id_));
-	}
-};
-struct BackwardMockup : public PropagatorMockup
-{
-	static unsigned int id_;
+//	ForwardMockup(std::initializer_list<double> costs = { 0.0 }, std::size_t solutions_per_compute = 1)
+//	  : PropagatorMockup(costs, solutions_per_compute) {
+//		restrictDirection(FORWARD);
+//		setName("FW" + std::to_string(++id_));
+//	}
+//};
+// struct BackwardMockup : public PropagatorMockup
+//{
+//	static unsigned int id_;
 
-	BackwardMockup(std::initializer_list<double> costs = { 0.0 }) : PropagatorMockup(costs) {
-		restrictDirection(BACKWARD);
-		setName("BW" + std::to_string(++id_));
-	}
-};
+//	BackwardMockup(std::initializer_list<double> costs = { 0.0 }) : PropagatorMockup(costs) {
+//		restrictDirection(BACKWARD);
+//		setName("BW" + std::to_string(++id_));
+//	}
+//};
 
 /* Forward propagator, contributing no solutions at all */
 struct ForwardDummy : PropagatingForward
@@ -133,9 +134,9 @@ struct Connect : stages::Connect
 };
 
 constexpr double INF = std::numeric_limits<double>::infinity();
-unsigned int GeneratorMockup::id_ = 0;
-unsigned int ForwardMockup::id_ = 0;
-unsigned int BackwardMockup::id_ = 0;
+// unsigned int GeneratorMockup::id_ = 0;
+// unsigned int ForwardMockup::id_ = 0;
+// unsigned int BackwardMockup::id_ = 0;
 unsigned int Connect::id_ = 0;
 
 struct TestBase : public testing::Test
@@ -146,12 +147,12 @@ struct TestBase : public testing::Test
 		task.setRobotModel(getModel());
 	}
 
-	void resetIds() {
-		GeneratorMockup::id_ = 0;
-		ForwardMockup::id_ = 0;
-		BackwardMockup::id_ = 0;
-		Connect::id_ = 0;
-	}
+	//	void resetIds() {
+	//		GeneratorMockup::id_ = 0;
+	//		ForwardMockup::id_ = 0;
+	//		BackwardMockup::id_ = 0;
+	//		Connect::id_ = 0;
+	//	}
 	template <typename C, typename S>
 	auto add(C& container, S* stage) -> S* {
 		container.add(Stage::pointer(stage));

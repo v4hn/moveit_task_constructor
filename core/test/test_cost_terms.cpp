@@ -11,6 +11,8 @@
 
 #include <gtest/gtest.h>
 
+#include "mockups.h"
+
 using namespace moveit::task_constructor;
 using namespace planning_scene;
 
@@ -18,81 +20,101 @@ const double STAGE_COST{ 7.0 };
 
 const double TRAJECTORY_DURATION{ 9.0 };
 
-class GeneratorMockup : public Generator
+// class GeneratorMockup : public Generator
+//{
+//	PlanningScenePtr ps;
+//	InterfacePtr prev;
+//	InterfacePtr next;
+
+// public:
+//	GeneratorMockup() : Generator("generator") {
+//		prev.reset(new Interface);
+//		next.reset(new Interface);
+//		pimpl()->setPrevEnds(prev);
+//		pimpl()->setNextStarts(next);
+//	}
+
+//	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
+//		ps.reset(new PlanningScene(robot_model));
+//		Generator::init(robot_model);
+//	}
+
+//	bool canCompute() const override { return true; }
+
+//	void compute() override {
+//		InterfaceState state(ps);
+//		spawn(std::move(state), STAGE_COST);
+//	}
+//};
+
+// class ConnectMockup : public Connecting
+//{
+//	using Connecting::Connecting;
+
+//	void compute(const InterfaceState& from, const InterfaceState& to) override {
+//		auto solution{ std::make_shared<SubTrajectory>() };
+//		solution->setCost(STAGE_COST);
+//		connect(from, to, solution);
+//	}
+//};
+
+// class ForwardMockup : public PropagatingForward
+//{
+//	PlanningScenePtr ps;
+
+// public:
+//	using PropagatingForward::PropagatingForward;
+
+//	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
+//		ps.reset(new PlanningScene(robot_model));
+//		PropagatingForward::init(robot_model);
+//	}
+
+//	void computeForward(const InterfaceState& from) override {
+//		SubTrajectory solution;
+//		auto traj{ std::make_shared<robot_trajectory::RobotTrajectory>(ps->getRobotModel(),
+//			                                                            ps->getRobotModel()->getJointModelGroups()[0]) };
+//		traj->addSuffixWayPoint(ps->getCurrentState(), 0.0);
+//		traj->addSuffixWayPoint(ps->getCurrentState(), TRAJECTORY_DURATION);
+//		solution.setTrajectory(traj);
+//		solution.setCost(STAGE_COST);
+//		InterfaceState to(from);
+
+//		sendForward(from, std::move(to), std::move(solution));
+//	};
+//};
+
+// class BackwardMockup : public PropagatingBackward
+//{
+//	using PropagatingBackward::PropagatingBackward;
+
+//	void computeBackward(const InterfaceState& to) override {
+//		SubTrajectory solution;
+//		solution.setCost(STAGE_COST);
+//		InterfaceState from(to);
+
+//		sendBackward(std::move(from), to, std::move(solution));
+//	};
+//};
+
+struct GeneratorMockupCost : public GeneratorMockup
 {
-	PlanningScenePtr ps;
-	InterfacePtr prev;
-	InterfacePtr next;
-
-public:
-	GeneratorMockup() : Generator("generator") {
-		prev.reset(new Interface);
-		next.reset(new Interface);
-		pimpl()->setPrevEnds(prev);
-		pimpl()->setNextStarts(next);
-	}
-
-	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
-		ps.reset(new PlanningScene(robot_model));
-		Generator::init(robot_model);
-	}
-
-	bool canCompute() const override { return true; }
-
-	void compute() override {
-		InterfaceState state(ps);
-		spawn(std::move(state), STAGE_COST);
-	}
+	GeneratorMockupCost() : GeneratorMockup({ STAGE_COST }) {}
 };
 
-class ConnectMockup : public Connecting
+struct ConnectMockupCost : public ConnectMockup
 {
-	using Connecting::Connecting;
-
-	void compute(const InterfaceState& from, const InterfaceState& to) override {
-		auto solution{ std::make_shared<SubTrajectory>() };
-		solution->setCost(STAGE_COST);
-		connect(from, to, solution);
-	}
+	ConnectMockupCost() : ConnectMockup({ STAGE_COST }) {}
 };
 
-class ForwardMockup : public PropagatingForward
+struct ForwardMockupCost : public ForwardMockup
 {
-	PlanningScenePtr ps;
-
-public:
-	using PropagatingForward::PropagatingForward;
-
-	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
-		ps.reset(new PlanningScene(robot_model));
-		PropagatingForward::init(robot_model);
-	}
-
-	void computeForward(const InterfaceState& from) override {
-		SubTrajectory solution;
-		auto traj{ std::make_shared<robot_trajectory::RobotTrajectory>(ps->getRobotModel(),
-			                                                            ps->getRobotModel()->getJointModelGroups()[0]) };
-		traj->addSuffixWayPoint(ps->getCurrentState(), 0.0);
-		traj->addSuffixWayPoint(ps->getCurrentState(), TRAJECTORY_DURATION);
-		solution.setTrajectory(traj);
-		solution.setCost(STAGE_COST);
-		InterfaceState to(from);
-
-		sendForward(from, std::move(to), std::move(solution));
-	};
+	ForwardMockupCost() : ForwardMockup({ STAGE_COST }) {}
 };
 
-class BackwardMockup : public PropagatingBackward
+struct BackwardMockupCost : public BackwardMockup
 {
-	using PropagatingBackward::PropagatingBackward;
-
-	void computeBackward(const InterfaceState& to) override {
-		SubTrajectory solution;
-		solution.setCost(STAGE_COST);
-		InterfaceState from(to);
-
-		sendBackward(std::move(from), to, std::move(solution));
-	};
+	BackwardMockupCost() : BackwardMockup({ STAGE_COST }) {}
 };
 
 template <typename T>
@@ -105,7 +127,9 @@ public:
 	InterfaceStatePtr state_start, state_end;
 
 	Standalone(const moveit::core::RobotModelConstPtr& robot)
-	  : T(), robot(robot), dummy(std::make_shared<Interface>()), ps(new planning_scene::PlanningScene(robot)) {}
+	  : T(), robot(robot), dummy(std::make_shared<Interface>()), ps(new planning_scene::PlanningScene(robot)) {
+		resetIds();
+	}
 
 	// reset and prepare for a compute step
 	void prepare() {
@@ -173,7 +197,7 @@ TEST(CostTerm, SolutionConnected) {
 	const moveit::core::RobotModelConstPtr robot{ getModel() };
 
 	Standalone<SerialContainer> container(robot);
-	auto stage{ std::make_unique<ConnectMockup>() };
+	auto stage{ std::make_unique<ConnectMockupCost>() };
 
 	// custom CostTerm to verify SubTrajectory is hooked up to its states & creator
 	class VerifySolutionCostTerm : public TrajectoryCostTerm
@@ -206,17 +230,17 @@ TEST(CostTerm, SetLambdaCostTerm) {
 	const moveit::core::RobotModelConstPtr robot{ getModel() };
 
 	Standalone<SerialContainer> container(robot);
-	auto stage{ std::make_unique<GeneratorMockup>() };
+	auto stage{ std::make_unique<GeneratorMockupCost>() };
 	stage->setCostTerm([](auto&& /*s*/) { return 1.0; });
 	container.computeWithStages({ std::move(stage) });
 	EXPECT_EQ(container.solutions().front()->cost(), 1.0) << "can use simple lambda signature";
 
-	stage = std::make_unique<GeneratorMockup>();
+	stage = std::make_unique<GeneratorMockupCost>();
 	stage->setCostTerm([](auto&& /*s*/, auto&& /*comment*/) { return 1.0; });
 	container.computeWithStages({ std::move(stage) });
 	EXPECT_EQ(container.solutions().front()->cost(), 1.0) << "can use full lambda signature";
 
-	stage = std::make_unique<GeneratorMockup>();
+	stage = std::make_unique<GeneratorMockupCost>();
 	stage->setCostTerm([](auto&& /*s*/, auto&& comment) {
 		comment = "I want the user to see this";
 		return 1.0;
@@ -232,14 +256,14 @@ TEST(CostTerm, CostOverwrite) {
 
 	Standalone<SerialContainer> container(robot);
 
-	container.computeWithStages({ std::make_unique<GeneratorMockup>() });
+	container.computeWithStages({ std::make_unique<GeneratorMockupCost>() });
 	EXPECT_EQ(container.solutions().front()->cost(), STAGE_COST) << "return cost of stage by default";
 
-	container.computeWithStageCost({ std::make_unique<GeneratorMockup>() }, nullptr);
+	container.computeWithStageCost({ std::make_unique<GeneratorMockupCost>() }, nullptr);
 	EXPECT_EQ(container.solutions().front()->cost(), STAGE_COST) << "nullptr cost term forwards cost";
 
 	auto constant_cost{ std::make_shared<cost::Constant>(1.0) };
-	container.computeWithStageCost({ std::make_unique<GeneratorMockup>() }, constant_cost);
+	container.computeWithStageCost({ std::make_unique<GeneratorMockupCost>() }, constant_cost);
 	EXPECT_EQ(container.solutions().front()->cost(), constant_cost->cost) << "custom cost overwrites stage cost";
 }
 
@@ -251,16 +275,16 @@ TEST(CostTerm, StageTypes) {
 	auto constant{ std::make_shared<cost::Constant>(1.0) };
 
 	// already tested above
-	// cont.computeWithStageCost(std::make_unique<GeneratorMockup>(), constant);
+	// cont.computeWithStageCost(std::make_unique<GeneratorMockupCost>(), constant);
 	// EXPECT_EQ(cont.solutions().front()->cost(), constant.cost);
 
-	container.computeWithStageCost({ std::make_unique<ConnectMockup>() }, constant);
+	container.computeWithStageCost({ std::make_unique<ConnectMockupCost>() }, constant);
 	EXPECT_EQ(container.solutions().front()->cost(), constant->cost) << "custom cost works for connect";
 
-	container.computeWithStageCost({ std::make_unique<ForwardMockup>() }, constant);
+	container.computeWithStageCost({ std::make_unique<ForwardMockupCost>() }, constant);
 	EXPECT_EQ(container.solutions().front()->cost(), constant->cost) << "custom cost works for forward propagator";
 
-	container.computeWithStageCost({ std::make_unique<BackwardMockup>() }, constant);
+	container.computeWithStageCost({ std::make_unique<BackwardMockupCost>() }, constant);
 	EXPECT_EQ(container.solutions().front()->cost(), constant->cost) << "custom cost works for backward propagator";
 }
 
@@ -268,7 +292,7 @@ TEST(CostTerm, PassThroughUsesCost) {
 	moveit::core::RobotModelPtr robot{ getModel() };
 	Standalone<stages::PassThrough> container(robot);
 
-	auto stage{ std::make_unique<BackwardMockup>() };
+	auto stage{ std::make_unique<BackwardMockupCost>() };
 	auto constant{ std::make_shared<cost::Constant>(84.0) };
 	stage->setCostTerm(constant);
 
@@ -283,7 +307,7 @@ TEST(CostTerm, PassThroughOverwritesCost) {
 	moveit::core::RobotModelPtr robot{ getModel() };
 	Standalone<stages::PassThrough> container(robot);
 
-	auto stage{ std::make_unique<BackwardMockup>() };
+	auto stage{ std::make_unique<BackwardMockupCost>() };
 	auto constant_inner{ std::make_shared<cost::Constant>(84.0) };
 	stage->setCostTerm(constant_inner);
 
@@ -300,7 +324,7 @@ TEST(CostTerm, PassThroughCanModifyCost) {
 	moveit::core::RobotModelPtr robot{ getModel() };
 	Standalone<stages::PassThrough> container(robot);
 
-	auto stage{ std::make_unique<BackwardMockup>() };
+	auto stage{ std::make_unique<BackwardMockupCost>() };
 	auto constant{ std::make_shared<cost::Constant>(8.0) };
 	stage->setCostTerm(constant);
 	container.setCostTerm([](auto&& s) { return s.cost() * s.cost(); });
@@ -315,18 +339,18 @@ TEST(CostTerm, CompositeSolutions) {
 	Standalone<SerialContainer> container{ getModel() };
 
 	{
-		auto s1{ std::make_unique<ForwardMockup>() };
-		auto s2{ std::make_unique<ForwardMockup>() };
+		auto s1{ std::make_unique<ForwardMockupCost>() };
+		auto s2{ std::make_unique<ForwardMockupCost>() };
 
 		container.computeWithStages({ std::move(s1), std::move(s2) });
 		EXPECT_EQ(container.solutions().front()->cost(), 2 * STAGE_COST) << "by default stage costs are added";
 	}
 
 	{
-		auto s1{ std::make_unique<ForwardMockup>() };
+		auto s1{ std::make_unique<ForwardMockupCost>() };
 		auto constant{ std::make_shared<cost::Constant>(1.0) };
 		s1->setCostTerm(constant);
-		auto s2{ std::make_unique<ForwardMockup>() };
+		auto s2{ std::make_unique<ForwardMockupCost>() };
 
 		container.computeWithStages({ std::move(s1), std::move(s2) });
 		EXPECT_EQ(container.solutions().front()->cost(), STAGE_COST + constant->cost)
@@ -334,8 +358,8 @@ TEST(CostTerm, CompositeSolutions) {
 	}
 
 	{
-		auto s1{ std::make_unique<ForwardMockup>() };
-		auto s2{ std::make_unique<ForwardMockup>() };
+		auto s1{ std::make_unique<ForwardMockupCost>() };
+		auto s2{ std::make_unique<ForwardMockupCost>() };
 		auto c1{ std::make_unique<SerialContainer>() };
 		auto constant1{ std::make_shared<cost::Constant>(1.0) };
 		s1->setCostTerm(constant1);
@@ -343,7 +367,7 @@ TEST(CostTerm, CompositeSolutions) {
 		c1->add(std::move(s1));
 		c1->add(std::move(s2));
 
-		auto s3{ std::make_unique<ForwardMockup>() };
+		auto s3{ std::make_unique<ForwardMockupCost>() };
 		auto constant2{ std::make_shared<cost::Constant>(9.0) };
 		s3->setCostTerm(constant2);
 
@@ -356,15 +380,15 @@ TEST(CostTerm, CompositeSolutions) {
 TEST(CostTerm, CompositeSolutionsContainerCost) {
 	Standalone<SerialContainer> container{ getModel() };
 
-	auto s1{ std::make_unique<ForwardMockup>() };
+	auto s1{ std::make_unique<ForwardMockupCost>() };
 	auto s1_ptr{ s1.get() };
-	auto s2{ std::make_unique<ForwardMockup>() };
+	auto s2{ std::make_unique<ForwardMockupCost>() };
 
 	auto c1{ std::make_unique<SerialContainer>() };
 	c1->add(std::move(s1));
 	c1->add(std::move(s2));
 
-	auto s3{ std::make_unique<ForwardMockup>() };
+	auto s3{ std::make_unique<ForwardMockupCost>() };
 
 	container.setCostTerm(std::make_unique<cost::TrajectoryDuration>());
 	container.computeWithStages({ std::move(c1), std::move(s3) });
