@@ -11,7 +11,7 @@
 
 #include <gtest/gtest.h>
 
-#include "mockups.h"
+#include "stage_mockups.h"
 
 using namespace moveit::task_constructor;
 using namespace planning_scene;

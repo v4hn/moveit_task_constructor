@@ -6,7 +6,7 @@
 #include <moveit/planning_scene/planning_scene.h>
 #include <geometry_msgs/PoseStamped.h>
 
-#include "mockups.h"
+#include "stage_mockups.h"
 #include <ros/console.h>
 #include <gtest/gtest.h>
 

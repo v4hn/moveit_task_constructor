@@ -1,7 +1,7 @@
 #include <moveit/task_constructor/stage_p.h>
 #include <moveit/planning_scene/planning_scene.h>
 
-#include "mockups.h"
+#include "stage_mockups.h"
 
 namespace moveit {
 namespace task_constructor {
@@ -88,11 +88,7 @@ PropagatorMockup::PropagatorMockup(std::initializer_list<double> costs, std::siz
   , solutions_per_compute_(solutions_per_compute) {}
 
 PropagatorMockup::PropagatorMockup(int fw_runs, int bw_runs)
-  : PropagatingEitherWay()
-  , fw_runs_(fw_runs)
-  , bw_runs_(bw_runs)
-  , costs_(false, { 0.0 })
-  , solutions_per_compute_(1) {}
+  : PropagatingEitherWay(), fw_runs_(fw_runs), bw_runs_(bw_runs), costs_(false, { 0.0 }), solutions_per_compute_(1) {}
 
 void PropagatorMockup::computeForward(const InterfaceState& from) {
 	++calls_;

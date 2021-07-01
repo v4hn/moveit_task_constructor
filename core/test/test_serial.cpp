@@ -5,7 +5,7 @@
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/utils/robot_model_test_utils.h>
 
-#include "mockups.h"
+#include "stage_mockups.h"
 #include "models.h"
 #include <list>
 #include <memory>
