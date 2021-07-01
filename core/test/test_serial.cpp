@@ -143,7 +143,7 @@ struct TestBase : public testing::Test
 {
 	Task task;
 	TestBase() {
-		resetIds();
+		resetMockupIds();
 		task.setRobotModel(getModel());
 	}
 

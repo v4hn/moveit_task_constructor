@@ -85,7 +85,7 @@ struct BackwardMockup : public PropagatorMockup
 	BackwardMockup(int runs);
 };
 
-void resetIds() {
+void resetMockupIds() {
 	GeneratorMockup::id_ = 0;
 	ConnectMockup::id_ = 0;
 	ForwardMockup::id_ = 0;

@@ -128,7 +128,7 @@ public:
 
 	Standalone(const moveit::core::RobotModelConstPtr& robot)
 	  : T(), robot(robot), dummy(std::make_shared<Interface>()), ps(new planning_scene::PlanningScene(robot)) {
-		resetIds();
+		resetMockupIds();
 	}
 
 	// reset and prepare for a compute step
