@@ -8,10 +8,10 @@
 namespace moveit {
 namespace task_constructor {
 
-static unsigned int MOCK_ID = 0;
 const double TRAJECTORY_DURATION{ 9.0 };
 
 unsigned int GeneratorMockup::id_ = 0;
+unsigned int MonitoringGeneratorMockup::id_ = 0;
 unsigned int ConnectMockup::id_ = 0;
 unsigned int PropagatorMockup::id_ = 0;
 unsigned int ForwardMockup::id_ = 0;
@@ -57,6 +57,15 @@ void GeneratorMockup::compute() {
 	++runs_;
 
 	spawn(InterfaceState(ps_), costs_.cost());
+}
+
+MonitoringGeneratorMockup::MonitoringGeneratorMockup(Stage* monitored, PredefinedCosts&& costs)
+  : MonitoringGenerator{ "MON" + std::to_string(++id_), monitored }, costs_{ std::move(costs) } {}
+
+void MonitoringGeneratorMockup::onNewSolution(const SolutionBase& s) {
+	++runs_;
+
+	spawn(InterfaceState{ s.end()->scene()->diff() }, SubTrajectory{});
 }
 
 ConnectMockup::ConnectMockup(PredefinedCosts&& costs)

@@ -26,7 +26,6 @@ struct PredefinedCosts : CostTerm
 
 struct GeneratorMockup : public Generator
 {
-public:
 	planning_scene::PlanningScenePtr ps_;
 
 	PredefinedCosts costs_;
@@ -35,14 +34,26 @@ public:
 	static unsigned int id_;
 
 	GeneratorMockup(PredefinedCosts&& costs = PredefinedCosts{ { 0.0 }, true });
-	GeneratorMockup(std::list<double>&& costs) : GeneratorMockup{ PredefinedCosts{ std::move(costs), true } } {}
+	GeneratorMockup(std::initializer_list<double> costs)
+	  : GeneratorMockup{ PredefinedCosts{ std::move(costs), true } } {}
 
 	void init(const moveit::core::RobotModelConstPtr& robot_model) override;
 	bool canCompute() const override;
 	void compute() override;
 };
 
-// TODO(v4hn): migrate MonitoringGeneratorMockupup
+struct MonitoringGeneratorMockup : public MonitoringGenerator
+{
+	PredefinedCosts costs_;
+	size_t runs_{ 0 };
+
+	static unsigned int id_;
+
+	MonitoringGeneratorMockup(Stage* monitored, PredefinedCosts&& costs = PredefinedCosts{ { 0.0 }, true });
+	bool canCompute() const override { return false; }
+	void compute() override {}
+	void onNewSolution(const SolutionBase& s) override;
+};
 
 struct ConnectMockup : public Connecting
 {
@@ -52,7 +63,7 @@ struct ConnectMockup : public Connecting
 	static unsigned int id_;
 
 	ConnectMockup(PredefinedCosts&& costs = PredefinedCosts::constant(0.0));
-	ConnectMockup(std::list<double>&& costs) : ConnectMockup{ PredefinedCosts{ std::move(costs), true } } {}
+	ConnectMockup(std::initializer_list<double> costs) : ConnectMockup{ PredefinedCosts{ std::move(costs), true } } {}
 
 	using Connecting::compatible;
 	void compute(const InterfaceState& from, const InterfaceState& to) override;
@@ -67,7 +78,7 @@ struct PropagatorMockup : public PropagatingEitherWay
 	static unsigned int id_;
 
 	PropagatorMockup(PredefinedCosts&& costs = PredefinedCosts::constant(0.0), std::size_t solutions_per_compute = 1);
-	PropagatorMockup(std::list<double>&& costs, std::size_t solutions_per_compute = 1)
+	PropagatorMockup(std::initializer_list<double> costs, std::size_t solutions_per_compute = 1)
 	  : PropagatorMockup{ PredefinedCosts{ std::move(costs), true }, solutions_per_compute } {}
 
 	void computeForward(const InterfaceState& from) override;
@@ -80,7 +91,7 @@ struct ForwardMockup : public PropagatorMockup
 	static unsigned int id_;
 
 	ForwardMockup(PredefinedCosts&& costs = PredefinedCosts::constant(0.0), std::size_t solutions_per_compute = 1);
-	ForwardMockup(std::list<double>&& costs, std::size_t solutions_per_compute = 1)
+	ForwardMockup(std::initializer_list<double> costs, std::size_t solutions_per_compute = 1)
 	  : ForwardMockup{ PredefinedCosts{ std::move(costs), true }, solutions_per_compute } {}
 
 	void init(const moveit::core::RobotModelConstPtr& robot_model) override;
@@ -92,12 +103,13 @@ struct BackwardMockup : public PropagatorMockup
 	static unsigned int id_;
 
 	BackwardMockup(PredefinedCosts&& costs = PredefinedCosts::constant(0.0), std::size_t solutions_per_compute = 1);
-	BackwardMockup(std::list<double>&& costs, std::size_t solutions_per_compute = 1)
+	BackwardMockup(std::initializer_list<double> costs, std::size_t solutions_per_compute = 1)
 	  : BackwardMockup{ PredefinedCosts{ std::move(costs), true }, solutions_per_compute } {}
 };
 
 void resetMockupIds() {
 	GeneratorMockup::id_ = 0;
+	MonitoringGeneratorMockup::id_ = 0;
 	ConnectMockup::id_ = 0;
 	ForwardMockup::id_ = 0;
 	BackwardMockup::id_ = 0;
