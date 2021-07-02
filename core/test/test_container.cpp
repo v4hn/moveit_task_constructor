@@ -15,19 +15,6 @@
 
 using namespace moveit::task_constructor;
 
-// ForwardMockup that takes a while for its computation
-class TimedForwardMockup : public ForwardMockup
-{
-	std::chrono::milliseconds duration_;
-
-public:
-	TimedForwardMockup(std::chrono::milliseconds duration) : ForwardMockup{}, duration_{ duration } {}
-	void computeForward(const InterfaceState& from) override {
-		std::this_thread::sleep_for(duration_);
-		ForwardMockup::computeForward(from);
-	}
-};
-
 enum StageType
 {
 	GEN,
@@ -638,6 +625,19 @@ TEST(Task, reuse) {
 		ADD_FAILURE() << "InitStageException:" << std::endl << e << t;
 	}
 }
+
+// ForwardMockup that takes a while for its computation
+class TimedForwardMockup : public ForwardMockup
+{
+	std::chrono::milliseconds duration_;
+
+public:
+	TimedForwardMockup(std::chrono::milliseconds duration) : ForwardMockup{}, duration_{ duration } {}
+	void computeForward(const InterfaceState& from) override {
+		std::this_thread::sleep_for(duration_);
+		ForwardMockup::computeForward(from);
+	}
+};
 
 TEST(Task, timeout) {
 	resetMockupIds();

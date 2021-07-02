@@ -8,8 +8,6 @@
 namespace moveit {
 namespace task_constructor {
 
-const double TRAJECTORY_DURATION{ 9.0 };
-
 unsigned int GeneratorMockup::id_ = 0;
 unsigned int MonitoringGeneratorMockup::id_ = 0;
 unsigned int ConnectMockup::id_ = 0;
@@ -106,27 +104,6 @@ ForwardMockup::ForwardMockup(PredefinedCosts&& costs, std::size_t solutions_per_
   : PropagatorMockup{ std::move(costs), solutions_per_compute } {
 	restrictDirection(FORWARD);
 	setName("FWD" + std::to_string(++id_));
-}
-
-void ForwardMockup::init(const moveit::core::RobotModelConstPtr& robot_model) {
-	ps.reset(new planning_scene::PlanningScene(robot_model));
-	PropagatorMockup::init(robot_model);
-}
-
-void ForwardMockup::computeForward(const InterfaceState& from) {
-	// TODO(v4hn): move this into subclass
-	++runs_;
-	for (size_t i = 0; i < solutions_per_compute_; ++i) {
-		SubTrajectory solution;
-		auto traj{ std::make_shared<robot_trajectory::RobotTrajectory>(ps->getRobotModel(), nullptr) };
-		traj->addSuffixWayPoint(ps->getCurrentState(), 0.0);
-		traj->addSuffixWayPoint(ps->getCurrentState(), TRAJECTORY_DURATION);
-		solution.setTrajectory(traj);
-		solution.setCost(costs_.cost());
-		InterfaceState to(from);
-
-		sendForward(from, std::move(to), std::move(solution));
-	}
 }
 
 BackwardMockup::BackwardMockup(PredefinedCosts&& costs, std::size_t solutions_per_compute)

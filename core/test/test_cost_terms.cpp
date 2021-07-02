@@ -41,6 +41,32 @@ struct BackwardCostMockup : public BackwardMockup
 	BackwardCostMockup() : BackwardMockup{ PredefinedCosts::constant(STAGE_COST) } {}
 };
 
+struct ForwardTrajectoryMockup : public ForwardMockup
+{
+	ForwardTrajectoryMockup(PredefinedCosts&& costs = PredefinedCosts::constant(0.0),
+	                        std::size_t solutions_per_compute = 1)
+	  : ForwardMockup{ std::move(costs), solutions_per_compute } {}
+	ForwardTrajectoryMockup(std::initializer_list<double> costs, std::size_t solutions_per_compute = 1)
+	  : ForwardTrajectoryMockup{ PredefinedCosts{ std::move(costs), true }, solutions_per_compute } {}
+
+	void computeForward(const InterfaceState& from) override {
+		++runs_;
+
+		for (size_t i = 0; i < solutions_per_compute_; ++i) {
+			SubTrajectory solution;
+			auto traj{ std::make_shared<robot_trajectory::RobotTrajectory>(from.scene()->getRobotModel(), nullptr) };
+			planning_scene::PlanningScenePtr ps{ from.scene()->diff() };
+			traj->addSuffixWayPoint(ps->getCurrentState(), 0.0);
+			traj->addSuffixWayPoint(ps->getCurrentState(), TRAJECTORY_DURATION);
+			solution.setTrajectory(traj);
+			solution.setCost(STAGE_COST);
+			InterfaceState to(from);
+
+			sendForward(from, std::move(to), std::move(solution));
+		}
+	}
+};
+
 template <typename T>
 class Standalone : public T
 {
@@ -306,15 +332,15 @@ TEST(CostTerm, CompositeSolutions) {
 TEST(CostTerm, CompositeSolutionsContainerCost) {
 	Standalone<SerialContainer> container{ getModel() };
 
-	auto s1{ std::make_unique<ForwardCostMockup>() };
+	auto s1{ std::make_unique<ForwardTrajectoryMockup>() };
 	auto s1_ptr{ s1.get() };
-	auto s2{ std::make_unique<ForwardCostMockup>() };
+	auto s2{ std::make_unique<ForwardTrajectoryMockup>() };
 
 	auto c1{ std::make_unique<SerialContainer>() };
 	c1->add(std::move(s1));
 	c1->add(std::move(s2));
 
-	auto s3{ std::make_unique<ForwardCostMockup>() };
+	auto s3{ std::make_unique<ForwardTrajectoryMockup>() };
 
 	container.setCostTerm(std::make_unique<cost::TrajectoryDuration>());
 	container.computeWithStages({ std::move(c1), std::move(s3) });

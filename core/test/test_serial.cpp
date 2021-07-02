@@ -15,7 +15,6 @@ using namespace moveit::task_constructor;
 using namespace planning_scene;
 
 /* Connect creating solutions with given costs */
-// TODO(v4hn) move this to stubs - does it do something ConnectMockup can't?
 struct Connect : stages::Connect
 {
 	PredefinedCostsPtr costs_;
@@ -48,15 +47,10 @@ struct TestBase : public testing::Test
 	Task task;
 	TestBase() {
 		resetMockupIds();
+		Connect::id_ = 0;
 		task.setRobotModel(getModel());
 	}
 
-	//	void resetIds() {
-	//		GeneratorMockup::id_ = 0;
-	//		ForwardMockup::id_ = 0;
-	//		BackwardMockup::id_ = 0;
-	//		Connect::id_ = 0;
-	//	}
 	template <typename C, typename S>
 	auto add(C& container, S* stage) -> S* {
 		container.add(Stage::pointer(stage));

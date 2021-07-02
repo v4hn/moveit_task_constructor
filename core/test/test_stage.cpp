@@ -13,14 +13,12 @@
 using namespace moveit::task_constructor;
 using namespace planning_scene;
 
-// unsigned int GeneratorMockup::id_ = 0;
-
 struct StandaloneGeneratorMockup : public GeneratorMockup
 {
 	InterfacePtr prev;
 	InterfacePtr next;
 
-	StandaloneGeneratorMockup(std::list<double>&& costs)
+	StandaloneGeneratorMockup(std::initializer_list<double>&& costs)
 	  : StandaloneGeneratorMockup{ PredefinedCosts{ std::move(costs), true } } {}
 
 	StandaloneGeneratorMockup(PredefinedCosts&& costs = PredefinedCosts{ { 0.0 }, true })

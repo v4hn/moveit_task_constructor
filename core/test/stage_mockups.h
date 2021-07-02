@@ -13,8 +13,10 @@ struct PredefinedCosts : CostTerm
 	mutable bool finite_;
 
 	PredefinedCosts(std::list<double>&& costs, bool finite = true);
+	PredefinedCosts(std::initializer_list<double> costs, bool finite = true)
+	  : PredefinedCosts{ std::list<double>{ costs }, finite } {};
 
-	static PredefinedCosts constant(double c) { return PredefinedCosts{ { c }, false }; }
+	static PredefinedCosts constant(double c) { return PredefinedCosts{ std::list<double>{ c }, false }; }
 
 	bool exhausted() const;
 	double cost() const;
@@ -33,9 +35,8 @@ struct GeneratorMockup : public Generator
 
 	static unsigned int id_;
 
-	GeneratorMockup(PredefinedCosts&& costs = PredefinedCosts{ { 0.0 }, true });
-	GeneratorMockup(std::initializer_list<double> costs)
-	  : GeneratorMockup{ PredefinedCosts{ std::move(costs), true } } {}
+	// default to one solution to avoid infinity loops
+	GeneratorMockup(PredefinedCosts&& costs = PredefinedCosts{ std::list<double>{ 0.0 }, true });
 
 	void init(const moveit::core::RobotModelConstPtr& robot_model) override;
 	bool canCompute() const override;
@@ -49,7 +50,8 @@ struct MonitoringGeneratorMockup : public MonitoringGenerator
 
 	static unsigned int id_;
 
-	MonitoringGeneratorMockup(Stage* monitored, PredefinedCosts&& costs = PredefinedCosts{ { 0.0 }, true });
+	MonitoringGeneratorMockup(Stage* monitored, PredefinedCosts&& costs = PredefinedCosts::constant(0.0));
+
 	bool canCompute() const override { return false; }
 	void compute() override {}
 	void onNewSolution(const SolutionBase& s) override;
@@ -63,9 +65,9 @@ struct ConnectMockup : public Connecting
 	static unsigned int id_;
 
 	ConnectMockup(PredefinedCosts&& costs = PredefinedCosts::constant(0.0));
-	ConnectMockup(std::initializer_list<double> costs) : ConnectMockup{ PredefinedCosts{ std::move(costs), true } } {}
 
-	using Connecting::compatible;
+	using Connecting::compatible;  // make this accessible for testing
+
 	void compute(const InterfaceState& from, const InterfaceState& to) override;
 };
 
@@ -78,8 +80,6 @@ struct PropagatorMockup : public PropagatingEitherWay
 	static unsigned int id_;
 
 	PropagatorMockup(PredefinedCosts&& costs = PredefinedCosts::constant(0.0), std::size_t solutions_per_compute = 1);
-	PropagatorMockup(std::initializer_list<double> costs, std::size_t solutions_per_compute = 1)
-	  : PropagatorMockup{ PredefinedCosts{ std::move(costs), true }, solutions_per_compute } {}
 
 	void computeForward(const InterfaceState& from) override;
 	void computeBackward(const InterfaceState& to) override;
@@ -87,15 +87,9 @@ struct PropagatorMockup : public PropagatingEitherWay
 
 struct ForwardMockup : public PropagatorMockup
 {
-	planning_scene::PlanningScenePtr ps;
 	static unsigned int id_;
 
 	ForwardMockup(PredefinedCosts&& costs = PredefinedCosts::constant(0.0), std::size_t solutions_per_compute = 1);
-	ForwardMockup(std::initializer_list<double> costs, std::size_t solutions_per_compute = 1)
-	  : ForwardMockup{ PredefinedCosts{ std::move(costs), true }, solutions_per_compute } {}
-
-	void init(const moveit::core::RobotModelConstPtr& robot_model) override;
-	void computeForward(const InterfaceState& from) override;
 };
 
 struct BackwardMockup : public PropagatorMockup
@@ -103,8 +97,6 @@ struct BackwardMockup : public PropagatorMockup
 	static unsigned int id_;
 
 	BackwardMockup(PredefinedCosts&& costs = PredefinedCosts::constant(0.0), std::size_t solutions_per_compute = 1);
-	BackwardMockup(std::initializer_list<double> costs, std::size_t solutions_per_compute = 1)
-	  : BackwardMockup{ PredefinedCosts{ std::move(costs), true }, solutions_per_compute } {}
 };
 
 void resetMockupIds() {
