@@ -15,46 +15,29 @@ using namespace planning_scene;
 
 // unsigned int GeneratorMockup::id_ = 0;
 
-// class GeneratorMockup : public Generator
-//{
-//	PlanningScenePtr ps;
-//	InterfacePtr prev;
-//	InterfacePtr next;
+struct StandaloneGeneratorMockup : public GeneratorMockup
+{
+	InterfacePtr prev;
+	InterfacePtr next;
 
-// public:
-//	GeneratorMockup() : Generator("generator") {
-//		prev.reset(new Interface);
-//		next.reset(new Interface);
-//		pimpl()->setPrevEnds(prev);
-//		pimpl()->setNextStarts(next);
-//	}
+	StandaloneGeneratorMockup(std::list<double>&& costs)
+	  : StandaloneGeneratorMockup{ PredefinedCosts{ std::move(costs), true } } {}
 
-//	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
-//		ps.reset((new PlanningScene(robot_model)));
-//		Generator::init(robot_model);
-//	}
-
-//	bool canCompute() const override { return true; }
-//	void compute() override {
-//		InterfaceState state(ps);
-//		state.properties().set("target_pose", geometry_msgs::PoseStamped());
-//		spawn(std::move(state), 0.0);
-//	}
-//};
-
-// class ConnectMockup : public Connecting
-//{
-// public:
-//	using Connecting::compatible;
-//	void compute(const InterfaceState& from, const InterfaceState& to) override {}
-//};
+	StandaloneGeneratorMockup(PredefinedCosts&& costs = PredefinedCosts{ { 0.0 }, true })
+	  : GeneratorMockup{ std::move(costs) } {
+		prev.reset(new Interface);
+		next.reset(new Interface);
+		pimpl()->setPrevEnds(prev);
+		pimpl()->setNextStarts(next);
+	}
+};
 
 TEST(Stage, registerCallbacks) {
-	GeneratorMockup g;
+	StandaloneGeneratorMockup g{ PredefinedCosts::constant(0.0) };
 	g.init(getModel());
 
 	uint called = 0;
-	auto cb = [&called](const SolutionBase& s) {
+	auto cb = [&called](const SolutionBase& /* s */) {
 		++called;
 		return true;
 	};

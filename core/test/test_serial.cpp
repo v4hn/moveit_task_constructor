@@ -14,105 +14,12 @@
 using namespace moveit::task_constructor;
 using namespace planning_scene;
 
-// MOVEIT_STRUCT_FORWARD(PredefinedCosts);
-// struct PredefinedCosts : CostTerm
-//{
-//	mutable std::list<double> costs_;  // list of costs to assign
-//	mutable double cost_ = 0.0;  // last assigned cost
-//	bool finite_;  // finite number of compute() attempts?
-
-//	PredefinedCosts(bool finite, std::list<double>&& costs) : costs_(std::move(costs)), finite_(finite) {}
-//	bool exhausted() const { return finite_ && costs_.empty(); }
-//	double cost() const {
-//		if (!costs_.empty()) {
-//			cost_ = costs_.front();
-//			costs_.pop_front();
-//		}
-//		return cost_;
-//	}
-
-//	double operator()(const SubTrajectory& /*s*/, std::string& /*comment*/) const override { return cost(); }
-//	double operator()(const SolutionSequence& /*s*/, std::string& /*comment*/) const override { return cost(); }
-//	double operator()(const WrappedSolution& /*s*/, std::string& /*comment*/) const override { return cost(); }
-//};
-
-///** Generator creating solutions with given costs */
-// struct GeneratorMockup : Generator
-//{
-//	PlanningScenePtr ps_;
-//	PredefinedCosts costs_;
-//	static unsigned int id_;
-
-//	GeneratorMockup(std::initializer_list<double> costs = { 0.0 })
-//	  : Generator("GEN" + std::to_string(++id_)), costs_(true, costs) {}
-
-//	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
-//		ps_.reset(new PlanningScene(robot_model));
-//		Generator::init(robot_model);
-//	}
-
-//	bool canCompute() const override { return !costs_.exhausted(); }
-//	void compute() override { spawn(InterfaceState(ps_), costs_.cost()); }
-//};
-
-// struct PropagatorMockup : public PropagatingEitherWay
-//{
-//	PredefinedCosts costs_;
-//	std::size_t solutions_per_compute_;
-
-//	unsigned int calls_ = 0;
-
-//	PropagatorMockup(std::initializer_list<double> costs = { 0.0 }, std::size_t solutions_per_compute = 1)
-//	  : PropagatingEitherWay(), costs_(false, costs), solutions_per_compute_(solutions_per_compute) {}
-
-//	void computeForward(const InterfaceState& from) override {
-//		++calls_;
-//		for (std::size_t i = 0; i < solutions_per_compute_; ++i) {
-//			SubTrajectory solution(robot_trajectory::RobotTrajectoryConstPtr(), costs_.cost());
-//			sendForward(from, InterfaceState(from.scene()->diff()), std::move(solution));
-//		}
-//	}
-//	void computeBackward(const InterfaceState& to) override {
-//		++calls_;
-//		for (std::size_t i = 0; i < solutions_per_compute_; ++i) {
-//			SubTrajectory solution(robot_trajectory::RobotTrajectoryConstPtr(), costs_.cost());
-//			sendBackward(InterfaceState(to.scene()->diff()), to, std::move(solution));
-//		}
-//	}
-//};
-// struct ForwardMockup : public PropagatorMockup
-//{
-//	static unsigned int id_;
-
-//	ForwardMockup(std::initializer_list<double> costs = { 0.0 }, std::size_t solutions_per_compute = 1)
-//	  : PropagatorMockup(costs, solutions_per_compute) {
-//		restrictDirection(FORWARD);
-//		setName("FW" + std::to_string(++id_));
-//	}
-//};
-// struct BackwardMockup : public PropagatorMockup
-//{
-//	static unsigned int id_;
-
-//	BackwardMockup(std::initializer_list<double> costs = { 0.0 }) : PropagatorMockup(costs) {
-//		restrictDirection(BACKWARD);
-//		setName("BW" + std::to_string(++id_));
-//	}
-//};
-
-/* Forward propagator, contributing no solutions at all */
-struct ForwardDummy : PropagatingForward
-{
-	using PropagatingForward::PropagatingForward;
-	void computeForward(const InterfaceState& /*from*/) override {}
-};
-
 /* Connect creating solutions with given costs */
+// TODO(v4hn) move this to stubs - does it do something ConnectMockup can't?
 struct Connect : stages::Connect
 {
-	PlanningScenePtr ps_;
 	PredefinedCostsPtr costs_;
-	unsigned int calls_ = 0;
+	unsigned int calls_{ 0 };
 	static unsigned int id_;
 
 	static GroupPlannerVector getPlanners() {
@@ -120,9 +27,9 @@ struct Connect : stages::Connect
 		return { { "group", planner }, { "eef_group", planner } };
 	}
 
-	Connect(std::initializer_list<double> costs = {}, bool enforce_sequential = false)
+	Connect(std::initializer_list<double> costs = { 0.0 }, bool enforce_sequential = false)
 	  : stages::Connect("CON" + std::to_string(++id_), getPlanners()) {
-		costs_ = std::make_shared<PredefinedCosts>(false, costs);
+		costs_ = std::make_shared<PredefinedCosts>(costs, false);
 		setCostTerm(costs_);
 		if (enforce_sequential)
 			setProperty("merge_mode", SEQUENTIAL);
@@ -134,9 +41,6 @@ struct Connect : stages::Connect
 };
 
 constexpr double INF = std::numeric_limits<double>::infinity();
-// unsigned int GeneratorMockup::id_ = 0;
-// unsigned int ForwardMockup::id_ = 0;
-// unsigned int BackwardMockup::id_ = 0;
 unsigned int Connect::id_ = 0;
 
 struct TestBase : public testing::Test
@@ -163,11 +67,11 @@ struct TestBase : public testing::Test
 using ConnectConnect = TestBase;
 // https://github.com/ros-planning/moveit_task_constructor/issues/182
 TEST_F(ConnectConnect, SuccSucc) {
-	add(task, new GeneratorMockup({ 1, 2, 3 }));
+	add(task, new GeneratorMockup({ 1.0, 2.0, 3.0 }));
 	add(task, new Connect());
-	add(task, new GeneratorMockup({ 10, 20 }));
+	add(task, new GeneratorMockup({ 10.0, 20.0 }));
 	add(task, new Connect());
-	add(task, new GeneratorMockup());
+	add(task, new GeneratorMockup({ 0.0 }));
 
 	EXPECT_TRUE(task.plan());
 	ASSERT_EQ(task.solutions().size(), 3u * 2u);
@@ -186,7 +90,7 @@ TEST_F(ConnectConnect, FailSucc) {
 	add(task, new GeneratorMockup());
 	add(task, new Connect());
 	add(task, new GeneratorMockup());
-	add(task, new ForwardDummy());
+	add(task, new ForwardMockup({}, 0));
 
 	EXPECT_FALSE(task.plan());
 }
@@ -200,7 +104,7 @@ TEST_F(Pruning, PropagatorFailure) {
 	EXPECT_FALSE(task.plan());
 	ASSERT_EQ(task.solutions().size(), 0u);
 	// ForwardMockup fails, so the backward stage should never compute
-	EXPECT_EQ(back->calls_, 0u);
+	EXPECT_EQ(back->runs_, 0u);
 }
 
 TEST_F(Pruning, PruningMultiForward) {
@@ -208,7 +112,7 @@ TEST_F(Pruning, PruningMultiForward) {
 	add(task, new BackwardMockup());
 	add(task, new GeneratorMockup());
 	// spawn two solutions for the only incoming state
-	add(task, new ForwardMockup({ 0, 0 }, 2));
+	add(task, new ForwardMockup({ 0.0, 0.0 }, 2));
 	// fail to extend the second solution
 	add(task, new ForwardMockup({ 0, INF }));
 
@@ -289,7 +193,7 @@ TEST_F(Pruning, PropagateFromContainerPull) {
 	EXPECT_FALSE(task.plan());
 
 	// the failure inside the container should prune computing of back
-	EXPECT_EQ(back->calls_, 0u);
+	EXPECT_EQ(back->runs_, 0u);
 }
 
 TEST_F(Pruning, PropagateFromContainerPush) {
@@ -319,5 +223,5 @@ TEST_F(Pruning, PropagateFromParallelContainerMultiplePaths) {
 	EXPECT_TRUE(task.plan());
 
 	// the failure in one branch of Alternatives must not prune computing back
-	EXPECT_EQ(back->calls_, 1u);
+	EXPECT_EQ(back->runs_, 1u);
 }

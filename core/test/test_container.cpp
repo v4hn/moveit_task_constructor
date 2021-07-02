@@ -4,7 +4,6 @@
 #include <moveit/task_constructor/stages/fixed_state.h>
 #include <moveit/planning_scene/planning_scene.h>
 
-#include "stage_mockups.h"
 #include "models.h"
 #include "gtest_value_printers.h"
 #include <gtest/gtest.h>
@@ -16,22 +15,22 @@ using namespace moveit::task_constructor;
 
 static unsigned int MOCK_ID = 0;
 
-// class GeneratorMockup : public Generator
-//{
-//	moveit::core::RobotModelConstPtr robot;
-//	int runs = 0;
+class GeneratorMockup : public Generator
+{
+	moveit::core::RobotModelConstPtr robot;
+	int runs = 0;
 
-// public:
-//	GeneratorMockup(int runs = 0) : Generator("generator " + std::to_string(++MOCK_ID)), runs(runs) {}
-//	void init(const moveit::core::RobotModelConstPtr& robot_model) override { robot = robot_model; }
-//	bool canCompute() const override { return runs > 0; }
-//	void compute() override {
-//		if (runs > 0) {
-//			--runs;
-//			spawn(InterfaceState(std::make_shared<planning_scene::PlanningScene>(robot)), SubTrajectory());
-//		}
-//	}
-//};
+public:
+	GeneratorMockup(int runs = 0) : Generator("generator " + std::to_string(++MOCK_ID)), runs(runs) {}
+	void init(const moveit::core::RobotModelConstPtr& robot_model) override { robot = robot_model; }
+	bool canCompute() const override { return runs > 0; }
+	void compute() override {
+		if (runs > 0) {
+			--runs;
+			spawn(InterfaceState(std::make_shared<planning_scene::PlanningScene>(robot)), SubTrajectory());
+		}
+	}
+};
 
 class MonitoringGeneratorMockup : public MonitoringGenerator
 {
@@ -45,44 +44,43 @@ public:
 	}
 };
 
-// class PropagatorMockup : public PropagatingEitherWay
-//{
-//	int fw_runs = 0;
-//	int bw_runs = 0;
+class PropagatorMockup : public PropagatingEitherWay
+{
+	int fw_runs = 0;
+	int bw_runs = 0;
 
-// public:
-//	PropagatorMockup(int fw = 0, int bw = 0)
-//	  : PropagatingEitherWay("propagate " + std::to_string(++MOCK_ID)), fw_runs(fw), bw_runs(bw) {}
-//	void computeForward(const InterfaceState& from) override {
-//		if (fw_runs > 0) {
-//			--fw_runs;
-//			sendForward(from, InterfaceState(from.scene()->diff()), SubTrajectory());
-//		}
-//	}
-//	void computeBackward(const InterfaceState& to) override {
-//		if (bw_runs > 0) {
-//			--bw_runs;
-//			sendBackward(InterfaceState(to.scene()->diff()), to, SubTrajectory());
-//		}
-//	}
-//};
-// class ForwardMockup : public PropagatorMockup
-//{
-// public:
-//	ForwardMockup(int runs = 0) : PropagatorMockup(runs, 0) {
-//		restrictDirection(FORWARD);
-//		setName("forward " + std::to_string(MOCK_ID));
-//	}
-//};
-
-// class BackwardMockup : public PropagatorMockup
-//{
-// public:
-//	BackwardMockup(int runs = 0) : PropagatorMockup(0, runs) {
-//		restrictDirection(BACKWARD);
-//		setName("backward " + std::to_string(MOCK_ID));
-//	}
-//};
+public:
+	PropagatorMockup(int fw = 0, int bw = 0)
+	  : PropagatingEitherWay("propagate " + std::to_string(++MOCK_ID)), fw_runs(fw), bw_runs(bw) {}
+	void computeForward(const InterfaceState& from) override {
+		if (fw_runs > 0) {
+			--fw_runs;
+			sendForward(from, InterfaceState(from.scene()->diff()), SubTrajectory());
+		}
+	}
+	void computeBackward(const InterfaceState& to) override {
+		if (bw_runs > 0) {
+			--bw_runs;
+			sendBackward(InterfaceState(to.scene()->diff()), to, SubTrajectory());
+		}
+	}
+};
+class ForwardMockup : public PropagatorMockup
+{
+public:
+	ForwardMockup(int runs = 0) : PropagatorMockup(runs, 0) {
+		restrictDirection(FORWARD);
+		setName("forward " + std::to_string(MOCK_ID));
+	}
+};
+class BackwardMockup : public PropagatorMockup
+{
+public:
+	BackwardMockup(int runs = 0) : PropagatorMockup(0, runs) {
+		restrictDirection(BACKWARD);
+		setName("backward " + std::to_string(MOCK_ID));
+	}
+};
 
 // ForwardMockup that takes a while for its computation
 class TimedForwardMockup : public ForwardMockup
@@ -97,18 +95,18 @@ public:
 	}
 };
 
-// class ConnectMockup : public Connecting
-//{
-//	int runs = 0;
+class ConnectMockup : public Connecting
+{
+	int runs = 0;
 
-// public:
-//	ConnectMockup(int runs = 0) : Connecting("connect " + std::to_string(++MOCK_ID)), runs(runs) {}
-//	void compute(const InterfaceState& from, const InterfaceState& to) override {
-//		if (runs > 0)
-//			--runs;
-//		connect(from, to, std::make_shared<SubTrajectory>());
-//	}
-//};
+public:
+	ConnectMockup(int runs = 0) : Connecting("connect " + std::to_string(++MOCK_ID)), runs(runs) {}
+	void compute(const InterfaceState& from, const InterfaceState& to) override {
+		if (runs > 0)
+			--runs;
+		connect(from, to, std::make_shared<SubTrajectory>());
+	}
+};
 
 enum StageType
 {
@@ -298,28 +296,28 @@ TEST_F(SerialTest, insertion_order) {
 	VALIDATE();
 
 	/*****  inserting first stage  *****/
-	auto g = std::make_unique<GeneratorMockup>(0);
+	auto g = std::make_unique<GeneratorMockup>();
 	StagePrivate* gp = g->pimpl();
 	container.insert(std::move(g));
 	EXPECT_FALSE(g);  // ownership transferred to container
 	VALIDATE(gp);
 
 	/*****  inserting second stage  *****/
-	auto f = std::make_unique<ForwardMockup>(0);
+	auto f = std::make_unique<ForwardMockup>();
 	StagePrivate* fp = f->pimpl();
 	container.insert(std::move(f));
 	EXPECT_FALSE(f);  // ownership transferred to container
 	VALIDATE(gp, fp);
 
 	/*****  inserting third stage  *****/
-	auto f2 = std::make_unique<ForwardMockup>(0);
+	auto f2 = std::make_unique<ForwardMockup>();
 	StagePrivate* fp2 = f2->pimpl();
 	container.insert(std::move(f2), 1);
 	EXPECT_FALSE(f2);  // ownership transferred to container
 	VALIDATE(gp, fp2, fp);
 
 	/*****  inserting another generator stage  *****/
-	auto g2 = std::make_unique<GeneratorMockup>(0);
+	auto g2 = std::make_unique<GeneratorMockup>();
 	StagePrivate* gp2 = g2->pimpl();
 	container.insert(std::move(g2));
 	VALIDATE(gp, fp2, fp, gp2);
@@ -673,8 +671,8 @@ TEST_F(ParallelTest, init_any) {
 TEST(Task, move) {
 	MOCK_ID = 0;
 	Task t1("foo");
-	t1.add(std::make_unique<GeneratorMockup>(0));
-	t1.add(std::make_unique<GeneratorMockup>(0));
+	t1.add(std::make_unique<GeneratorMockup>());
+	t1.add(std::make_unique<GeneratorMockup>());
 	EXPECT_EQ(t1.stages()->numChildren(), 2u);
 
 	MOCK_ID = 0;
@@ -757,11 +755,11 @@ TEST(Fallback, failing) {
 	Task t;
 	t.setRobotModel(getModel());
 
-	t.add(std::make_unique<GeneratorMockup>(0));
+	t.add(std::make_unique<GeneratorMockup>());
 
 	auto fallback = std::make_unique<Fallbacks>("Fallbacks");
-	fallback->add(std::make_unique<ForwardMockup>(0));
-	fallback->add(std::make_unique<ForwardMockup>(0));
+	fallback->add(std::make_unique<ForwardMockup>());
+	fallback->add(std::make_unique<ForwardMockup>());
 	t.add(std::move(fallback));
 
 	EXPECT_FALSE(t.plan());
