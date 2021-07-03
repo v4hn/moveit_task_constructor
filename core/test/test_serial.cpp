@@ -84,7 +84,7 @@ TEST_F(ConnectConnect, FailSucc) {
 	add(task, new GeneratorMockup());
 	add(task, new Connect());
 	add(task, new GeneratorMockup());
-	add(task, new ForwardMockup({}, 0));
+	add(task, new ForwardMockup(PredefinedCosts::constant(0.0), 0));
 
 	EXPECT_FALSE(task.plan());
 }
@@ -106,7 +106,7 @@ TEST_F(Pruning, PruningMultiForward) {
 	add(task, new BackwardMockup());
 	add(task, new GeneratorMockup());
 	// spawn two solutions for the only incoming state
-	add(task, new ForwardMockup({ 0.0, 0.0 }, 2));
+	add(task, new ForwardMockup(PredefinedCosts{ { 0.0, 0.0 } }, 2));
 	// fail to extend the second solution
 	add(task, new ForwardMockup({ 0, INF }));
 
