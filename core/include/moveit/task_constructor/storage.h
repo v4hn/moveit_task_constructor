@@ -82,7 +82,7 @@ public:
 	enum Status
 	{
 		ENABLED,  // state is actively considered during planning
-		DISABLED_FAILED,  // state that failed, causing the whole partial solution to be disabled
+		FAILED,  // state that failed, causing the whole partial solution to be disabled
 		DISABLED,  // state is disabled because a required connected state failed
 	};
 	/** InterfaceStates are ordered according to two values:
@@ -100,6 +100,7 @@ public:
 
 		inline Status status() const { return std::get<0>(*this); }
 		inline bool enabled() const { return std::get<0>(*this) == ENABLED; }
+		inline bool failed() const { return std::get<0>(*this) == FAILED; }
 		inline bool pruned() const { return std::get<0>(*this) == DISABLED; }
 		inline unsigned int depth() const { return std::get<1>(*this); }
 		inline double cost() const { return std::get<2>(*this); }

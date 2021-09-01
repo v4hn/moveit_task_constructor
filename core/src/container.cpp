@@ -114,19 +114,19 @@ void ContainerBasePrivate::onNewFailure(const Stage& child, const InterfaceState
 			break;
 
 		case PROPAGATE_FORWARDS:  // mark from as failed (backwards)
-			setStatus<Interface::BACKWARD>(from, InterfaceState::Status::DISABLED_FAILED);
+			setStatus<Interface::BACKWARD>(from, InterfaceState::Status::FAILED);
 			break;
 		case PROPAGATE_BACKWARDS:  // mark to as failed (forwards)
-			setStatus<Interface::FORWARD>(to, InterfaceState::Status::DISABLED_FAILED);
+			setStatus<Interface::FORWARD>(to, InterfaceState::Status::FAILED);
 			break;
 
 		case CONNECT:
 			if (const Connecting* conn = dynamic_cast<const Connecting*>(&child)) {
 				auto cimpl = conn->pimpl();
 				if (!cimpl->hasPendingOpposites<Interface::FORWARD>(from))
-					setStatus<Interface::BACKWARD>(from, InterfaceState::Status::DISABLED_FAILED);
+					setStatus<Interface::BACKWARD>(from, InterfaceState::Status::FAILED);
 				if (!cimpl->hasPendingOpposites<Interface::BACKWARD>(to))
-					setStatus<Interface::FORWARD>(to, InterfaceState::Status::DISABLED_FAILED);
+					setStatus<Interface::FORWARD>(to, InterfaceState::Status::FAILED);
 			}
 			break;
 	}
@@ -172,12 +172,12 @@ void ContainerBasePrivate::setStatus(const InterfaceState* s, InterfaceState::St
 	}
 
 	// To break symmetry between both ends of a partial solution sequence that gets disabled,
-	// we mark the first state with DISABLED_FAILED and all other states down the tree only with DISABLED.
+	// we mark the first state with FAILED and all other states down the tree only with DISABLED.
 	// This allows us to re-enable the FAILED side, while not (yet) consider the DISABLED states again,
 	// when new states arrive in a Connecting stage.
 	// All DISABLED states are only re-enabled if the FAILED state actually gets connected.
 	// For details, see: https://github.com/ros-planning/moveit_task_constructor/pull/221
-	if (status == InterfaceState::DISABLED_FAILED)
+	if (status == InterfaceState::FAILED)
 		status = InterfaceState::DISABLED;  // only the first state is marked as FAILED
 
 	// traverse solution tree
@@ -452,9 +452,9 @@ void SerialContainer::onNewSolution(const SolutionBase& current) {
 
 	// If this is a solution for a state that failed before (might happen with Connect)
 	// we have to enable the solution branch again before going on
-	if (current.start()->priority().status() == InterfaceState::Status::DISABLED_FAILED)
+	if (current.start()->priority().failed())
 		pimpl()->setStatus<Interface::BACKWARD>(current.start(), InterfaceState::Status::ENABLED);
-	if (current.end()->priority().status() == InterfaceState::Status::DISABLED_FAILED)
+	if (current.end()->priority().failed())
 		pimpl()->setStatus<Interface::FORWARD>(current.end(), InterfaceState::Status::ENABLED);
 
 	// states of solution must be active, otherwise this would not have been computed
