@@ -453,7 +453,7 @@ void SerialContainer::onNewSolution(const SolutionBase& current) {
 	if (current.start()->priority().status() == InterfaceState::Status::DISABLED_FAILED)
 		pimpl()->setStatus<Interface::BACKWARD>(current.start(), InterfaceState::Status::ENABLED);
 	if (current.end()->priority().status() == InterfaceState::Status::DISABLED_FAILED)
-		pimpl()->setStatus<Interface::FORWARD>(current.start(), InterfaceState::Status::ENABLED);
+		pimpl()->setStatus<Interface::FORWARD>(current.end(), InterfaceState::Status::ENABLED);
 
 	// states of solution must be active, otherwise this would not have been computed
 	assert(current.start()->priority().enabled());
