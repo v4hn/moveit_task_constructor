@@ -526,7 +526,7 @@ InterfaceFlags PropagatingEitherWayPrivate::requiredInterface() const {
 }
 
 inline bool PropagatingEitherWayPrivate::hasStartState() const {
-	return starts_ && !starts_->empty() && starts_->front()->priority().enabled();
+	return starts_ && !starts_->empty() && !starts_->front()->priority().pruned();
 }
 
 const InterfaceState& PropagatingEitherWayPrivate::fetchStartState() {
@@ -535,7 +535,7 @@ const InterfaceState& PropagatingEitherWayPrivate::fetchStartState() {
 }
 
 inline bool PropagatingEitherWayPrivate::hasEndState() const {
-	return ends_ && !ends_->empty() && ends_->front()->priority().enabled();
+	return ends_ && !ends_->empty() && !ends_->front()->priority().pruned();
 }
 
 const InterfaceState& PropagatingEitherWayPrivate::fetchEndState() {
@@ -742,11 +742,11 @@ inline bool ConnectingPrivate::hasPendingOpposites(const InterfaceState* source)
 		static_assert(Interface::BACKWARD == 1, "This code assumes FORWARD=0, BACKWARD=1. Don't change their order!");
 		const auto tgt = std::get<opposite<dir>()>(candidate);
 
-		if (&*src == source && tgt->priority().enabled())
+		if (&*src == source && !tgt->priority().pruned())
 			return true;
 
 		// early stopping when only infeasible pairs are to come
-		if (!std::get<0>(candidate)->priority().enabled())
+		if (std::get<0>(candidate)->priority().pruned())
 			break;
 	}
 	return false;
@@ -757,15 +757,16 @@ template bool ConnectingPrivate::hasPendingOpposites<Interface::BACKWARD>(const 
 
 bool ConnectingPrivate::canCompute() const {
 	// Do we still have feasible pending state pairs?
-	return !pending.empty() && pending.front().first->priority().enabled() &&
-	       pending.front().second->priority().enabled();
+	return !pending.empty() && !pending.front().first->priority().pruned() &&
+	       !pending.front().second->priority().pruned();
 }
 
 void ConnectingPrivate::compute() {
 	const StatePair& top = pending.pop();
 	const InterfaceState& from = *top.first;
 	const InterfaceState& to = *top.second;
-	assert(from.priority().enabled() && to.priority().enabled());
+	assert(!from.priority().pruned());
+	assert(!to.priority().pruned());
 	static_cast<Connecting*>(me_)->compute(from, to);
 }
 
@@ -773,9 +774,9 @@ std::ostream& ConnectingPrivate::printPendingPairs(std::ostream& os) const {
 	static const char* red = "\033[31m";
 	static const char* reset = "\033[m";
 	for (const auto& candidate : pending) {
-		if (!candidate.first->priority().enabled() || !candidate.second->priority().enabled())
+		if (candidate.first->priority().pruned() || candidate.second->priority().pruned())
 			os << " " << red;
-		// find indeces of InterfaceState pointers in start/end Interfaces
+		// find indices of InterfaceState pointers in start/end Interfaces
 		unsigned int first = 0, second = 0;
 		std::find_if(starts()->begin(), starts()->end(), [&](const InterfaceState* s) {
 			++first;
