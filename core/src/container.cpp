@@ -448,6 +448,13 @@ void SerialContainer::onNewSolution(const SolutionBase& current) {
 	// failures should never trigger this callback
 	assert(!current.isFailure());
 
+	// If this is a solution for a state that failed before (might happen with Connect)
+	// we have to enable the solution branch again before going on
+	if (current.start()->priority().status() == InterfaceState::Status::DISABLED_FAILED)
+		pimpl()->setStatus<Interface::BACKWARD>(current.start(), InterfaceState::Status::ENABLED);
+	if (current.end()->priority().status() == InterfaceState::Status::DISABLED_FAILED)
+		pimpl()->setStatus<Interface::FORWARD>(current.start(), InterfaceState::Status::ENABLED);
+
 	// states of solution must be active, otherwise this would not have been computed
 	assert(current.start()->priority().enabled());
 	assert(current.end()->priority().enabled());
