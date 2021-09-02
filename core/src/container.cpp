@@ -658,14 +658,9 @@ bool SerialContainer::canCompute() const {
 
 void SerialContainer::compute() {
 	for (const auto& stage : pimpl()->children()) {
-		try {
 			if (!stage->pimpl()->canCompute())
 				continue;
-
 			stage->pimpl()->runCompute();
-		} catch (const Property::error& e) {
-			stage->reportPropertyError(e);
-		}
 	}
 }
 
@@ -800,11 +795,7 @@ bool WrapperBase::canCompute() const {
 }
 
 void WrapperBase::compute() {
-	try {
-		wrapped()->pimpl()->runCompute();
-	} catch (const Property::error& e) {
-		wrapped()->reportPropertyError(e);
-	}
+	wrapped()->pimpl()->runCompute();
 }
 
 bool Alternatives::canCompute() const {
@@ -816,11 +807,7 @@ bool Alternatives::canCompute() const {
 
 void Alternatives::compute() {
 	for (const auto& stage : pimpl()->children()) {
-		try {
-			stage->pimpl()->runCompute();
-		} catch (const Property::error& e) {
-			stage->reportPropertyError(e);
-		}
+		stage->pimpl()->runCompute();
 	}
 }
 
@@ -903,11 +890,7 @@ void FallbacksPrivate::computeGenerate() {
 	if(current_generator_ == children().end())
 		return;
 
-	try {
-		(*current_generator_)->pimpl()->runCompute();
-	} catch (const Property::error& e) {
-		(*current_generator_)->reportPropertyError(e);
-	}
+	(*current_generator_)->pimpl()->runCompute();
 }
 
 template <typename Interface::Direction dir>
@@ -936,14 +919,10 @@ void FallbacksPrivate::computeFromExternal(){
 
 	const auto& stage { (*spec.stage)->pimpl() };
 
-	try {
-		// run ALL possible computations (on new state)
-		// this is needed to decide whether it should be passed to the next child too
-		while (stage->canCompute()){
-			stage->runCompute();
-		}
-	} catch (const Property::error& e) {
-		stage->me()->reportPropertyError(e);
+	// run ALL possible computations (on new state)
+	// this is needed to decide whether it should be passed to the next child too
+	while (stage->canCompute()){
+		stage->runCompute();
 	}
 
 	auto has_solutions{ [](const InterfaceState& state, Interface::Direction dir){
@@ -1007,11 +986,7 @@ bool Merger::canCompute() const {
 
 void Merger::compute() {
 	for (const auto& stage : pimpl()->children()) {
-		try {
 			stage->pimpl()->runCompute();
-		} catch (const Property::error& e) {
-			stage->reportPropertyError(e);
-		}
 	}
 }
 
