@@ -82,8 +82,8 @@ public:
 	enum Status
 	{
 		ENABLED,  // state is actively considered during planning
-		FAILED,  // state that failed, causing the whole partial solution to be disabled
 		DISABLED,  // state is disabled because a required connected state failed
+		FAILED,  // state that failed, causing the whole partial solution to be disabled
 	};
 	/** InterfaceStates are ordered according to two values:
 	 *  Depth of interlinked trajectory parts and accumulated trajectory costs along that path.
