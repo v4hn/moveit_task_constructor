@@ -904,11 +904,7 @@ void FallbacksPrivate::computeGenerate() {
 		return;
 
 	try {
-		// run ALL possible computations (on new state)
-		// this is needed to decide whether it should be passed to the next child too
-		while ((*current_generator_)->pimpl()->canCompute()){
-			(*current_generator_)->pimpl()->runCompute();
-		}
+		(*current_generator_)->pimpl()->runCompute();
 	} catch (const Property::error& e) {
 		(*current_generator_)->reportPropertyError(e);
 	}
