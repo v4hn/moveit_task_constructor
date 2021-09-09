@@ -260,8 +260,8 @@ protected:
 	std::deque<ExternalState> pending_states_;
 	StagePrivate* current_stage_;
 
-	void computeGenerate();
-	container_type::const_iterator current_generator_;
+	inline void computeGenerate();
+	mutable container_type::const_iterator current_generator_;
 
 private:
 	void initializeExternalInterfaces() override;
