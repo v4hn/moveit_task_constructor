@@ -195,8 +195,10 @@ template void ContainerBasePrivate::setStatus<Interface::BACKWARD>(const Interfa
 template <Interface::Direction dir>
 void ContainerBasePrivate::copyState(Interface::iterator external, const InterfacePtr& target, bool updated) {
 	if (updated) {
+		// update prio of all internal states linked to external
 		auto internals{ externalToInternalMap().equal_range(&*external) };
 		for (auto& i = internals.first; i != internals.second; ++i) {
+			// TODO: Not only update status, but full priority!
 			setStatus<dir>(i->second, external->priority().status());
 		}
 		return;
@@ -905,9 +907,16 @@ void FallbacksPrivate::computeGenerate() {
 
 template <typename Interface::Direction dir>
 void FallbacksPrivate::onNewExternalState(Interface::iterator external, bool updated) {
-	// TODO(v4hn): updated is not implemented
-	if(updated){
-		ROS_DEBUG_NAMED("Fallbacks", "updating external states is not supported in Fallbacks");
+	if (updated) {
+		auto it = std::find_if(pending_states_.begin(), pending_states_.end(),
+		                       [](const ExternalState& s) { return s.external_state == it; });
+		if (it == pending_states_.cend())
+			return;  // already processed
+
+		pending_states_.update(it);  // update sorting pos of this single item
+
+		// update prio of linked internal states as well
+		ContainerBasePrivate::copyState(it->dir, external, updated);
 		return;
 	}
 
