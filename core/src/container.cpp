@@ -909,14 +909,14 @@ template <typename Interface::Direction dir>
 void FallbacksPrivate::onNewExternalState(Interface::iterator external, bool updated) {
 	if (updated) {
 		auto it = std::find_if(pending_states_.begin(), pending_states_.end(),
-		                       [](const ExternalState& s) { return s.external_state == it; });
+		                       [external](const ExternalState& s) { return s.external_state == external; });
 		if (it == pending_states_.cend())
 			return;  // already processed
 
 		pending_states_.update(it);  // update sorting pos of this single item
 
 		// update prio of linked internal states as well
-		ContainerBasePrivate::copyState(it->dir, external, updated);
+		ContainerBasePrivate::copyState<dir>(external, InterfacePtr(), updated);
 		return;
 	}
 
