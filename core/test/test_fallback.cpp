@@ -91,14 +91,14 @@ TEST_F(FallbacksFixturePropagate, UpdateSolutionOrder) {
 	// use a fallback container to delay computation: the 1st child never succeeds, but only the 2nd
 	auto inner = std::make_unique<Fallbacks>("Inner");
 	inner->add(std::make_unique<ForwardMockup>(PredefinedCosts({ INF }, false)));  // always fail
-	inner->add(std::make_unique<ForwardMockup>(PredefinedCosts({ 100, 200 }, false)));
+	inner->add(std::make_unique<ForwardMockup>(PredefinedCosts::constant(0.0)));
 
 	auto fallbacks = std::make_unique<Fallbacks>("Fallbacks");
 	fallbacks->add(std::move(inner));
 	t.add(std::move(fallbacks));
 
-	EXPECT_TRUE(t.plan());
-	EXPECT_COSTS(t.solutions(), testing::ElementsAre(102, 221));
+	EXPECT_TRUE(t.plan(1));  // only return 1st solution
+	EXPECT_COSTS(t.solutions(), testing::ElementsAre(2));  // expecting less costly solution as result
 }
 
 TEST_F(FallbacksFixturePropagate, MultipleActivePendingStates) {
