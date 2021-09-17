@@ -88,9 +88,10 @@ TEST_F(FallbacksFixturePropagate, UpdateSolutionOrder) {
 	t.add(std::make_unique<GeneratorMockup>(PredefinedCosts({ 1.0, 2.0 })));
 	// available solutions (sorted) in individual runs of fallbacks: 1 | 11, 2 | 2, 11
 
-	// use a fallback container to delay computation: the 1st child never succeeds, but only the 2nd
+	// use a fallback container to delay computation twice: only the last child succeeds
 	auto inner = std::make_unique<Fallbacks>("Inner");
-	inner->add(std::make_unique<ForwardMockup>(PredefinedCosts({ INF }, false)));  // always fail
+	inner->add(std::make_unique<ForwardMockup>(PredefinedCosts({ INF }, false)));
+	inner->add(std::make_unique<ForwardMockup>(PredefinedCosts({ INF }, false)));
 	inner->add(std::make_unique<ForwardMockup>(PredefinedCosts::constant(0.0)));
 
 	auto fallbacks = std::make_unique<Fallbacks>("Fallbacks");
