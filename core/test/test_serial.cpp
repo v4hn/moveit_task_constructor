@@ -76,3 +76,19 @@ TEST_F(ConnectConnect, FailSucc) {
 
 	EXPECT_FALSE(t.plan());
 }
+
+using Pruning = TestBase;
+
+TEST_F(Pruning, ConnectReactivatesPrunedPaths) {
+	add(t, new BackwardMockup);
+	add(t, new GeneratorMockup({ 0 }));
+	// the Fallbacks container prunes the backward path on first round
+	// because no compatible state for Connect exists
+	auto* fallback{ new Fallbacks };
+	add(*fallback, new Connect);
+	add(t, fallback);
+	add(t, new GeneratorMockup({ 0 }));
+
+	EXPECT_TRUE(t.plan());
+	EXPECT_EQ(t.solutions().size(), 1u);
+}
