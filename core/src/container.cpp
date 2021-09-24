@@ -132,6 +132,14 @@ void ContainerBasePrivate::onNewFailure(const Stage& child, const InterfaceState
 					ROS_DEBUG_STREAM_NAMED("Connecting", "prune forward branch");
 					setStatus<Interface::FORWARD>(to, InterfaceState::Status::FAILED);
 				}
+			} else {
+				ROS_DEBUG_STREAM_NAMED("Connecting", "received failure from child not implementing Connecting. Prune "
+				                                     "branches unconditionally.");
+				// child might be a container or custom stage not implementing Connecting
+				// in that case we can only trust the child to propagate failures only
+				// when there is no pending alternative
+				setStatus<Interface::BACKWARD>(from, InterfaceState::Status::FAILED);
+				setStatus<Interface::FORWARD>(to, InterfaceState::Status::FAILED);
 			}
 			break;
 	}
