@@ -219,3 +219,17 @@ TEST_F(Pruning, PropagateFromParallelContainerMultiplePaths) {
 	// the failure in one branch of Alternatives must not prune computing back
 	EXPECT_EQ(back->runs_, 1u);
 }
+
+TEST_F(Pruning, ConnectReactivatesPrunedPaths) {
+	add(task, new BackwardMockup);
+	add(task, new GeneratorMockup({ 0 }));
+	// the Fallbacks container prunes the backward path on first round
+	// because no compatible state for Connect exists
+	auto* fallback{ new Fallbacks };
+	add(*fallback, new Connect);
+	add(task, fallback);
+	add(task, new GeneratorMockup({ 0 }));
+
+	EXPECT_TRUE(task.plan());
+	EXPECT_EQ(task.solutions().size(), 1u);
+}
