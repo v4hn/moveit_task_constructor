@@ -1,4 +1,5 @@
 #include <moveit/task_constructor/task.h>
+#include <moveit/task_constructor/stages/fixed_state.h>
 
 #include "stage_mockups.h"
 #include "models.h"
@@ -140,4 +141,26 @@ TEST_F(Pruning, PropagateFromParallelContainerMultiplePaths) {
 
 	// the failure in one branch of Alternatives must not prune computing back
 	EXPECT_EQ(back->runs_, 1u);
+}
+
+TEST_F(Pruning, PruningBug) {
+	/*
+	 * Current State --
+	 * Connect        |
+	 * ComputeIK    <--
+	 * MoveRelative
+	 */
+	auto ref = new stages::FixedState("fixed");
+	auto scene = std::make_shared<planning_scene::PlanningScene>(t.getRobotModel());
+	ref->setState(scene);
+	add(t, ref);
+	auto c1 = add(t, new ConnectMockup());
+	// Changing solutions_per_compute to 1 make this test pass
+	add(t, new GeneratorMockup(std::list<double>{ 0, 10, 20, 30 }, 2));
+	add(t, new PropagatorMockup({ INF, INF, 0.0, INF }));  // Or ForwardMockup
+
+	t.plan();
+
+	ASSERT_EQ(t.solutions().size(), 1u);
+	EXPECT_EQ(c1->runs_, 1u);
 }
