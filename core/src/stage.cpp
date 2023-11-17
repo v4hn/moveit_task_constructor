@@ -350,6 +350,13 @@ void Stage::reset() {
 	impl->total_compute_time_ = std::chrono::duration<double>::zero();
 }
 
+void StagePrivate::initPropertiesFromParents(ContainerBase* parent) {
+	if (parent->pimpl()->parent()) {
+		initPropertiesFromParents(parent->pimpl()->parent());
+	}
+	properties_.performInitFrom(Stage::PropertyInitializerSource::PARENT, parent->properties());
+}
+
 void Stage::init(const moveit::core::RobotModelConstPtr& /* robot_model */) {
 	auto impl = pimpl();
 
@@ -358,7 +365,7 @@ void Stage::init(const moveit::core::RobotModelConstPtr& /* robot_model */) {
 	if (impl->parent()) {
 		try {
 			ROS_DEBUG_STREAM_NAMED("Properties", fmt::format("init '{}'", name()));
-			impl->properties_.performInitFrom(PARENT, impl->parent()->properties());
+			impl->initPropertiesFromParents(impl->parent());
 		} catch (const Property::error& e) {
 			std::ostringstream oss;
 			oss << e.what();

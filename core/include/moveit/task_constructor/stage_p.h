@@ -137,6 +137,7 @@ public:
 	inline void setPrevEnds(const InterfacePtr& prev_ends) { prev_ends_ = prev_ends; }
 	inline void setNextStarts(const InterfacePtr& next_starts) { next_starts_ = next_starts; }
 
+	void initPropertiesFromParents(ContainerBase* parent);
 	void composePropertyErrorMsg(const std::string& name, std::ostream& os);
 
 	// methods to spawn new solutions
