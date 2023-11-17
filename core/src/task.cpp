@@ -158,9 +158,11 @@ void Task::clear() {
 
 void Task::enableIntrospection(bool enable) {
 	auto impl = pimpl();
-	if (enable && !impl->introspection_)
+	if (enable && !impl->introspection_) {
 		impl->introspection_.reset(new Introspection(impl));
-	else if (!enable && impl->introspection_) {
+		impl->introspection_->publishTaskDescription();
+		impl->introspection_->publishTaskState();
+	} else if (!enable && impl->introspection_) {
 		// reset introspection instance of all stages
 		impl->setIntrospection(nullptr);
 		impl->traverseStages(
@@ -223,7 +225,7 @@ void Task::init() {
 	    },
 	    1, UINT_MAX);
 
-	// first time publish task
+	// first time publish task with resolved interfaces
 	if (introspection)
 		introspection->publishTaskDescription();
 }
