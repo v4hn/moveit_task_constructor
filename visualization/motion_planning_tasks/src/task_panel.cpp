@@ -515,11 +515,11 @@ void TaskView::onSolutionSelectionChanged(const QItemSelection& /*selected*/, co
 		try {
 			solution = task->getSolution(index);
 			display->setSolutionStatus(bool(solution));
+			display->addMarkers(solution);
 		} catch (const std::invalid_argument& e) {
 			ROS_ERROR_STREAM(e.what());
 			display->setSolutionStatus(false, e.what());
 		}
-		display->addMarkers(solution);
 	}
 }
 
