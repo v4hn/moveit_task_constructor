@@ -66,7 +66,7 @@ ComputeIK::ComputeIK(const std::string& name, Stage::pointer&& child) : WrapperB
 	p.declare<moveit_msgs::Constraints>("constraints", moveit_msgs::Constraints(), "additional constraints to obey");
 
 	// ik_frame and target_pose are read from the interface
-	p.declare<geometry_msgs::PoseStamped>("ik_frame", "frame to be moved towards goal pose");
+	p.declare<boost::any>("ik_frame", "frame to be moved towards goal pose");
 	p.declare<geometry_msgs::PoseStamped>("target_pose", "goal pose for ik frame");
 }
 
@@ -296,7 +296,12 @@ void ComputeIK::compute() {
 		ik_pose_msg.header.frame_id = link->getName();
 		ik_pose_msg.pose.orientation.w = 1.0;
 	} else {
-		ik_pose_msg = boost::any_cast<geometry_msgs::PoseStamped>(value);
+		try {
+			ik_pose_msg.header.frame_id = boost::any_cast<std::string>(value);
+			ik_pose_msg.pose.orientation.w = 1.0;
+		} catch (const boost::bad_any_cast&) {
+			ik_pose_msg = boost::any_cast<geometry_msgs::PoseStamped>(value);
+		}
 		Eigen::Isometry3d ik_pose;
 		tf2::fromMsg(ik_pose_msg.pose, ik_pose);
 
