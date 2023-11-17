@@ -185,12 +185,11 @@ bool MoveTo::compute(const InterfaceState& state, planning_scene::PlanningSceneP
 	const std::string& group = props.get<std::string>("group");
 	const moveit::core::JointModelGroup* jmg = robot_model->getJointModelGroup(group);
 	if (!jmg) {
-		solution.markAsFailure("invalid joint model group: " + group);
-		return false;
+		throw std::runtime_error{ "invalid joint model group: " + group };
 	}
 	boost::any goal = props.get("goal");
 	if (goal.empty()) {
-		solution.markAsFailure("undefined goal");
+		throw std::runtime_error{ "undefined goal" };
 		return false;
 	}
 
@@ -221,8 +220,7 @@ bool MoveTo::compute(const InterfaceState& state, planning_scene::PlanningSceneP
 		}
 
 		if (!getPoseGoal(goal, scene, target) && !getPointGoal(goal, ik_pose_world, scene, target)) {
-			solution.markAsFailure(std::string("invalid goal type: ") + goal.type().name());
-			return false;
+			throw std::runtime_error{ std::string("invalid goal type: ") + goal.type().name() };
 		}
 
 		auto add_frame{ [&](const Eigen::Isometry3d& pose, const char name[]) {

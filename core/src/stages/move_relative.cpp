@@ -174,13 +174,11 @@ bool MoveRelative::compute(const InterfaceState& state, planning_scene::Planning
 	const std::string& group = props.get<std::string>("group");
 	const moveit::core::JointModelGroup* jmg = robot_model->getJointModelGroup(group);
 	if (!jmg) {
-		solution.markAsFailure("invalid joint model group: " + group);
-		return false;
+		std::runtime_error{ "invalid joint model group: " + group };
 	}
 	boost::any direction = props.get("direction");
 	if (direction.empty()) {
-		solution.markAsFailure("undefined direction");
-		return false;
+		throw std::runtime_error{ "undefined direction" };
 	}
 
 	double max_distance = props.get<double>("max_distance");
@@ -221,6 +219,10 @@ bool MoveRelative::compute(const InterfaceState& state, planning_scene::Planning
 
 		try {  // try to extract Twist
 			const geometry_msgs::TwistStamped& target = boost::any_cast<geometry_msgs::TwistStamped>(direction);
+
+			if (!scene->knowsFrameTransform(target.header.frame_id)) {
+				throw std::runtime_error{ "unknown frame '" + target.header.frame_id + "' for direction" };
+			}
 			const Eigen::Isometry3d& frame_pose = scene->getFrameTransform(target.header.frame_id);
 			tf2::fromMsg(target.twist.linear, linear);
 			tf2::fromMsg(target.twist.angular, angular);
@@ -264,6 +266,10 @@ bool MoveRelative::compute(const InterfaceState& state, planning_scene::Planning
 
 		try {  // try to extract Vector
 			const geometry_msgs::Vector3Stamped& target = boost::any_cast<geometry_msgs::Vector3Stamped>(direction);
+
+			if (!scene->knowsFrameTransform(target.header.frame_id)) {
+				throw std::runtime_error{ "unknown frame '" + target.header.frame_id + "' for direction" };
+			}
 			const Eigen::Isometry3d& frame_pose = scene->getFrameTransform(target.header.frame_id);
 			tf2::fromMsg(target.vector, linear);
 
@@ -282,8 +288,7 @@ bool MoveRelative::compute(const InterfaceState& state, planning_scene::Planning
 			linear = frame_pose.linear() * linear;
 			target_eigen = Eigen::Translation3d(linear) * ik_pose_world;
 		} catch (const boost::bad_any_cast&) {
-			solution.markAsFailure(std::string("invalid direction type: ") + direction.type().name());
-			return false;
+			throw std::runtime_error{ std::string("invalid direction type: ") + direction.type().name() };
 		}
 
 	COMPUTE:

@@ -252,16 +252,13 @@ void ComputeIK::compute() {
 	std::string msg;
 
 	if (!validateEEF(props, robot_model, eef_jmg, &msg)) {
-		ROS_WARN_STREAM_NAMED("ComputeIK", msg);
-		return;
+		throw std::runtime_error{ msg };
 	}
 	if (!validateGroup(props, robot_model, eef_jmg, jmg, &msg)) {
-		ROS_WARN_STREAM_NAMED("ComputeIK", msg);
-		return;
+		throw std::runtime_error{ msg };
 	}
 	if (!eef_jmg && !jmg) {
-		ROS_WARN_STREAM_NAMED("ComputeIK", "Neither eef nor group are well defined");
-		return;
+		throw std::runtime_error{ "Neither eef nor group are well defined" };
 	}
 	properties().property("timeout").setDefaultValue(jmg->getDefaultIKTimeout());
 
@@ -274,9 +271,8 @@ void ComputeIK::compute() {
 	tf2::fromMsg(target_pose_msg.pose, target_pose);
 	if (target_pose_msg.header.frame_id != scene->getPlanningFrame()) {
 		if (!scene->knowsFrameTransform(target_pose_msg.header.frame_id)) {
-			ROS_WARN_STREAM_NAMED("ComputeIK",
-			                      "Unknown reference frame for target pose: " << target_pose_msg.header.frame_id);
-			return;
+			throw std::runtime_error{ fmt::format("Unknown reference frame for target pose: '{}'",
+				                                   target_pose_msg.header.frame_id) };
 		}
 		// transform target_pose w.r.t. planning frame
 		target_pose = scene->getFrameTransform(target_pose_msg.header.frame_id) * target_pose;
@@ -290,8 +286,9 @@ void ComputeIK::compute() {
 		//  determine IK link from eef/group
 		if (!(link = eef_jmg ? robot_model->getLinkModel(eef_jmg->getEndEffectorParentGroup().second) :
                              jmg->getOnlyOneEndEffectorTip())) {
-			ROS_WARN_STREAM_NAMED("ComputeIK", "Failed to derive IK target link");
-			return;
+			std::string const type{ eef_jmg ? "eef" : "group" };
+			std::string const name{ eef_jmg ? eef_jmg->getName() : jmg->getName() };
+			throw std::runtime_error{ fmt::format("Could not derive unique IK target link from {} '{}'", type, name) };
 		}
 		ik_pose_msg.header.frame_id = link->getName();
 		ik_pose_msg.pose.orientation.w = 1.0;
@@ -306,13 +303,17 @@ void ComputeIK::compute() {
 		tf2::fromMsg(ik_pose_msg.pose, ik_pose);
 
 		if (!scene->getCurrentState().knowsFrameTransform(ik_pose_msg.header.frame_id)) {
-			ROS_WARN_STREAM_NAMED("ComputeIK",
-			                      fmt::format("ik frame unknown in robot: '{}'", ik_pose_msg.header.frame_id));
+			spawn(InterfaceState{ scene },
+			      SubTrajectory::failure(fmt::format("ik frame unknown in robot: '{}'", ik_pose_msg.header.frame_id)));
 			return;
 		}
 		ik_pose = scene->getCurrentState().getFrameTransform(ik_pose_msg.header.frame_id) * ik_pose;
 
 		link = scene->getCurrentState().getRigidlyConnectedParentLinkModel(ik_pose_msg.header.frame_id);
+		if (!link) {
+			throw std::runtime_error{ "ik frame '" + ik_pose_msg.header.frame_id +
+				                       "' is not rigidly connected to any link" };
+		}
 
 		// transform target pose such that ik frame will reach there if link does
 		target_pose = target_pose * ik_pose.inverse() * scene->getCurrentState().getFrameTransform(link->getName());
