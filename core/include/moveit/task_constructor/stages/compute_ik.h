@@ -68,7 +68,7 @@ namespace stages {
 class ComputeIK : public WrapperBase
 {
 public:
-	ComputeIK(const std::string& name = "IK", Stage::pointer&& child = Stage::pointer());
+	ComputeIK(const std::string& name = "IK", Stage::pointer&& child = nullptr);
 
 	void reset() override;
 	void init(const core::RobotModelConstPtr& robot_model) override;

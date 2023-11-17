@@ -58,7 +58,7 @@ class PredicateFilter : public WrapperBase
 public:
 	using Predicate = std::function<bool(const SolutionBase&, std::string&)>;
 
-	PredicateFilter(const std::string& name, Stage::pointer&& child = Stage::pointer());
+	PredicateFilter(const std::string& name, Stage::pointer&& child = nullptr);
 
 	void init(const moveit::core::RobotModelConstPtr& robot_model) override;
 

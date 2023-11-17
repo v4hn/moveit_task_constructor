@@ -214,7 +214,7 @@ class WrapperBase : public ParallelContainerBase
 {
 public:
 	PRIVATE_CLASS(WrapperBase)
-	WrapperBase(const std::string& name = "wrapper", Stage::pointer&& child = Stage::pointer());
+	WrapperBase(const std::string& name = "wrapper", Stage::pointer&& child = nullptr);
 
 	/// insertion is only allowed if children() is empty
 	void insert(Stage::pointer&& stage, int before = -1) override;
@@ -227,7 +227,7 @@ public:
 	void compute() override;
 
 protected:
-	WrapperBase(WrapperBasePrivate* impl, Stage::pointer&& child = Stage::pointer());
+	WrapperBase(WrapperBasePrivate* impl, Stage::pointer&& child = nullptr);
 };
 }  // namespace task_constructor
 }  // namespace moveit

@@ -92,7 +92,7 @@ public:
 class Pick : public PickPlaceBase
 {
 public:
-	Pick(Stage::pointer&& grasp_stage = Stage::pointer(), const std::string& name = "pick")
+	Pick(Stage::pointer&& grasp_stage = nullptr, const std::string& name = "pick")
 	  : PickPlaceBase(std::move(grasp_stage), name, true) {}
 
 	void setApproachMotion(const geometry_msgs::TwistStamped& motion, double min_distance, double max_distance) {
@@ -109,7 +109,7 @@ public:
 class Place : public PickPlaceBase
 {
 public:
-	Place(Stage::pointer&& ungrasp_stage = Stage::pointer(), const std::string& name = "place")
+	Place(Stage::pointer&& ungrasp_stage = nullptr, const std::string& name = "place")
 	  : PickPlaceBase(std::move(ungrasp_stage), name, false) {}
 
 	void setRetractMotion(const geometry_msgs::TwistStamped& motion, double min_distance, double max_distance) {

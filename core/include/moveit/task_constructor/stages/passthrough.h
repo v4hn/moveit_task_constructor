@@ -49,7 +49,7 @@ namespace stages {
 class PassThrough : public WrapperBase
 {
 public:
-	PassThrough(const std::string& name = "PassThrough", Stage::pointer&& child = Stage::pointer());
+	PassThrough(const std::string& name = "PassThrough", Stage::pointer&& child = nullptr);
 
 	void onNewSolution(const SolutionBase& s) override;
 };

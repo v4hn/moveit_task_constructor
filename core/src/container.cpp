@@ -379,7 +379,7 @@ void ContainerBase::insert(Stage::pointer&& stage, int before) {
 
 Stage::pointer ContainerBasePrivate::remove(ContainerBasePrivate::const_iterator pos) {
 	if (pos == children_.end())
-		return Stage::pointer();
+		return nullptr;
 
 	(*pos)->pimpl()->unparent();
 	Stage::pointer result = std::move(*children_.erase(pos, pos));  // stage from non-const iterator to pos
