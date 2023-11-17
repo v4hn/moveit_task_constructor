@@ -56,6 +56,9 @@ class JointInterpolationPlanner : public PlannerInterface
 public:
 	JointInterpolationPlanner();
 
+	void setMaxStep(double max_step) { setProperty("max_step", max_step); }
+	void setMaxEffort(double max_effort) { setProperty("max_effort", max_effort); }
+
 	void init(const moveit::core::RobotModelConstPtr& robot_model) override;
 
 	Result plan(const planning_scene::PlanningSceneConstPtr& from, const planning_scene::PlanningSceneConstPtr& to,
