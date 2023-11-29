@@ -317,10 +317,12 @@ void ContainerBasePrivate::liftSolution(const SolutionBasePtr& solution, const I
 	solution->setEndState(*external_to);
 
 	// spawn created states in external interfaces
-	if (created_from)
-		prevEnds()->add(*external_from);
-	if (created_to)
-		nextStarts()->add(*external_to);
+	if (!solution->isFailure()) {
+		if (created_from)
+			prevEnds()->add(*external_from);
+		if (created_to)
+			nextStarts()->add(*external_to);
+	}
 
 	newSolution(solution);
 }
