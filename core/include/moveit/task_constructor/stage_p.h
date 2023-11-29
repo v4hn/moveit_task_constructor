@@ -162,6 +162,10 @@ public:
 			compute();
 		} catch (const Property::error& e) {
 			me()->reportPropertyError(e);
+		} catch (const std::runtime_error& e) {
+			std::stringstream ss;
+			ss << "Stage '" << name() << "' failed with runtime error:\n" << e.what();
+			throw std::runtime_error(ss.str());
 		}
 		auto compute_stop_time = std::chrono::steady_clock::now();
 		total_compute_time_ += compute_stop_time - compute_start_time;
