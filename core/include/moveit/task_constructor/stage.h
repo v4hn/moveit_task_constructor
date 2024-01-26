@@ -45,6 +45,7 @@
 #include <moveit/task_constructor/storage.h>
 #include <vector>
 #include <list>
+#include <chrono>
 
 #define PRIVATE_CLASS(Class)                   \
 	friend class Class##Private;                \
@@ -192,6 +193,10 @@ public:
 	 * The logic of the individual stage should ensure this limit is respected.
 	 */
 	void setTimeout(double timeout) { setProperty("timeout", timeout); }
+	template <typename Rep, typename Period>
+	void setTimeout(const std::chrono::duration<Rep, Period>& timeout) {
+		setTimeout(timeout / std::chrono::seconds(1));
+	}
 	/// timeout of stage per computation
 	double timeout() const { return properties().get<double>("timeout"); }
 

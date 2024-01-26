@@ -45,6 +45,8 @@
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <ros/ros.h>
 
+#include <chrono>
+
 namespace moveit {
 namespace task_constructor {
 namespace stages {
@@ -56,7 +58,7 @@ CurrentState::CurrentState(const std::string& name) : Generator(name) {
 	auto& p = properties();
 	Property& timeout = p.property("timeout");
 	timeout.setDescription("max time to wait for get_planning_scene service");
-	timeout.setValue(DEFAULT_TIMEOUT.count());
+	setTimeout(DEFAULT_TIMEOUT);
 }
 
 void CurrentState::init(const moveit::core::RobotModelConstPtr& robot_model) {
