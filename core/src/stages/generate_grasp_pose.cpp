@@ -176,7 +176,12 @@ void GenerateGraspPose::compute() {
 
 		SubTrajectory trajectory;
 		trajectory.setCost(0.0);
-		trajectory.setComment(std::to_string(current_angle));
+		{
+			std::ostringstream comment;
+			comment.precision(3);
+			comment << "grasp angle: " << current_angle;
+			trajectory.setComment(std::move(comment).str());
+		}
 
 		// add frame at target pose
 		rviz_marker_tools::appendFrame(trajectory.markers(), target_pose_msg, 0.1, "grasp frame");
