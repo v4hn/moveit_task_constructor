@@ -310,6 +310,8 @@ Stage::Stage(StagePrivate* impl) : pimpl_(impl) {
 	assert(impl);
 	auto& p = properties();
 	p.declare<double>("timeout", "timeout per run (s)");
+	p.declare<size_t>("max_solutions", "maximum number of valid solutions to keep");
+
 	p.declare<std::string>("marker_ns", name(), "marker namespace");
 	p.declare<TrajectoryExecutionInfo>("trajectory_execution_info", TrajectoryExecutionInfo(),
 	                                   "settings used when executing the trajectory");

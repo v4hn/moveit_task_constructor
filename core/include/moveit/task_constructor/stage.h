@@ -200,6 +200,9 @@ public:
 	/// timeout of stage per computation
 	double timeout() const { return properties().get<double>("timeout"); }
 
+	void setMaxSolutions(size_t max_solutions) { setProperty("max_solutions", max_solutions); }
+	size_t maxSolutions() const { return properties().get<size_t>("max_solutions"); }
+
 	/** set marker namespace for solutions
 	 *
 	 * Auxiliary markers in this stage should use this namespace
