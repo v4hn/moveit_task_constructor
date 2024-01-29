@@ -102,7 +102,7 @@ std::vector<std::string> linkNames(const std::vector<const moveit::core::LinkMod
  *  link_names: set of links to include (or all if empty) */
 template <class T>  // with T = urdf::Visual or urdf::Collision
 void generateMarkers(const moveit::core::RobotState& robot_state, const MarkerCallback& callback,
-                     const std::vector<std::string>& link_names = {}) {
+                     const std::vector<std::string>& link_names = {}, bool include_attached = true) {
 	const std::vector<std::string>* names =
 	    link_names.empty() ? &robot_state.getRobotModel()->getLinkModelNames() : &link_names;
 	const urdf::ModelInterfaceSharedPtr& model = robot_state.getRobotModel()->getURDF();
@@ -120,6 +120,7 @@ void generateMarkers(const moveit::core::RobotState& robot_state, const MarkerCa
 
 		bool valid_found = false;
 		auto element_handler = [&](const T& element) {
+			// TODO: include attached objects if include_attached
 			if (element && element->geometry) {
 				createGeometryMarker(m, *element->geometry, element->origin, materialColor(*model, materialName(*element)));
 				if (m.scale.x == 0 && m.scale.y == 0 && m.scale.z == 0)
