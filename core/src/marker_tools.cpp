@@ -43,10 +43,10 @@ visualization_msgs::Marker& createGeometryMarker(visualization_msgs::Marker& mar
 
 const urdf::Color& materialColor(const urdf::ModelInterface& model, const std::string& material_name) {
 	static urdf::Color default_color;
-	if (default_color.r == 0.0f) {
-		default_color.r = 0.8f;
+	if (default_color.a == 0.0f) {
+		default_color.r = 0.0f;
 		default_color.g = 0.0f;
-		default_color.b = 0.0f;
+		default_color.b = 0.8f;
 		default_color.a = 1.0f;
 	};
 	urdf::MaterialSharedPtr material;
