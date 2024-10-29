@@ -459,12 +459,14 @@ bool PickPlaceTask::init() {
 		{
 			auto stage = std::make_unique<stages::MoveRelative>("retreat after place", cartesian_planner);
 			stage->properties().configureInitFrom(Stage::PARENT, { "group" });
-			stage->setMinMaxDistance(.12, .25);
+			stage->setMinMaxDistance(.05, .09);
 			stage->setIKFrame(hand_frame_);
 			stage->properties().set("marker_ns", "retreat");
 			geometry_msgs::Vector3Stamped vec;
 			vec.header.frame_id = hand_frame_;
-			vec.vector.z = -1.0;
+			vec.vector.x = 1.0;
+			vec.vector.y = -1.0;
+			vec.vector.z = -2.0;
 			stage->setDirection(vec);
 			place->insert(std::move(stage));
 		}
