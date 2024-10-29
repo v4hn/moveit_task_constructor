@@ -278,6 +278,10 @@ void TaskSolutionVisualization::changedTrail() {
 		if (enable_robot_color_property_->getBool())
 			setRobotColor(r, robot_color_property_->getColor());
 		r->setVisible(waypoint_i <= current_state_);
+		// TODO: provide RViz signal for updates to individual link visibility and connect it to each trail_ robot
+		for(auto& p : robot_render_->getRobot().getLinks()){
+			r->getLinks().at(p.first)->getLinkProperty()->setValue(p.second->getLinkProperty()->getValue());
+		}
 		trail_[i] = r;
 	}
 }
