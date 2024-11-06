@@ -122,9 +122,12 @@ PlannerInterface::Result CartesianPath::plan(const planning_scene::PlanningScene
 		result->addSuffixWayPoint(waypoint, 0.0);
 
 	auto timing = props.get<TimeParameterizationPtr>("time_parameterization");
-	if (timing)
-		timing->computeTimeStamps(*result, props.get<double>("max_velocity_scaling_factor"),
-		                          props.get<double>("max_acceleration_scaling_factor"));
+	if (timing) {
+		bool timingSucceeded = timing->computeTimeStamps(*result, props.get<double>("max_velocity_scaling_factor"),
+		                                                 props.get<double>("max_acceleration_scaling_factor"));
+		if (!timingSucceeded)
+			return { false, "Time parameterization failed" };
+	}
 
 	if (achieved_fraction < props.get<double>("min_fraction")) {
 		return { false, "min_fraction not met. Achieved: " + std::to_string(achieved_fraction) };

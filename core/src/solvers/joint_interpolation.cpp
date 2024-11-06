@@ -103,9 +103,12 @@ PlannerInterface::Result JointInterpolationPlanner::plan(const planning_scene::P
 		return { false, "Goal state is out of bounds!" };
 
 	auto timing = props.get<TimeParameterizationPtr>("time_parameterization");
-	if (timing)
-		timing->computeTimeStamps(*result, props.get<double>("max_velocity_scaling_factor"),
-		                          props.get<double>("max_acceleration_scaling_factor"));
+	if (timing) {
+		bool timingSucceeded = timing->computeTimeStamps(*result, props.get<double>("max_velocity_scaling_factor"),
+		                                                 props.get<double>("max_acceleration_scaling_factor"));
+		if (!timingSucceeded)
+			return { false, "Time parameterization failed" };
+	}
 
 	// set max_effort on first and last waypoint (first, because we might reverse the trajectory)
 	const auto& max_effort = properties().get("max_effort");
