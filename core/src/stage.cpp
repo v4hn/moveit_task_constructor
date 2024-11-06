@@ -908,6 +908,7 @@ bool ConnectingPrivate::canCompute() const {
 void ConnectingPrivate::compute() {
 	auto me{ static_cast<Connecting*>(me_) };
 
+	// async TODO: if configured, spawn a number of tasks instead of just one
 	const StatePair& top = pending.pop();
 	const InterfaceState& from = *top.first;
 	const InterfaceState& to = *top.second;
