@@ -215,6 +215,9 @@ protected:
 	// validate that child's interface matches mine (considering start or end only as determined by mask)
 	template <unsigned int mask>
 	void validateInterface(const StagePrivate& child, InterfaceFlags required) const;
+
+private:
+	std::mutex mutex_on_new_solution_;
 };
 PIMPL_FUNCTIONS(SerialContainer)
 

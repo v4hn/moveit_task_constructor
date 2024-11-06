@@ -145,6 +145,9 @@ void PickPlaceTask::loadParameters() {
 	errors += !rosparam_shortcuts::get(LOGNAME, pnh_, "lift_object_max_dist", lift_object_max_dist_);
 	errors += !rosparam_shortcuts::get(LOGNAME, pnh_, "place_surface_offset", place_surface_offset_);
 	errors += !rosparam_shortcuts::get(LOGNAME, pnh_, "place_pose", place_pose_);
+
+	workers_ = pnh_.param<int>("workers", -1);
+
 	rosparam_shortcuts::shutdownIfError(LOGNAME, errors);
 }
 
@@ -157,6 +160,9 @@ bool PickPlaceTask::init() {
 	// TODO(v4hn): global storage for Introspection services to enable one-liner
 	task_.reset();
 	task_.reset(new moveit::task_constructor::Task());
+
+	if (workers_ >= 0)
+		task_->setParallelWorkers(workers_);
 
 	// Individual movement stages are collected within the Task object
 	Task& t = *task_;

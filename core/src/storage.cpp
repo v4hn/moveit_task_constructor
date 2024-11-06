@@ -127,7 +127,10 @@ void Interface::add(InterfaceState& state) {
 	}
 
 	// move list node into interface's state list (sorted by priority)
-	moveFrom(it, container);
+	{
+		std::scoped_lock lock(mutex_);
+		moveFrom(it, container);
+	}
 	// and finally call notify callback
 	if (notify_)
 		notify_(it, UpdateFlags());
@@ -135,20 +138,27 @@ void Interface::add(InterfaceState& state) {
 
 Interface::container_type Interface::remove(iterator it) {
 	container_type result;
-	moveTo(it, result, result.end());
+	{
+		std::scoped_lock lock(mutex_);
+		moveTo(it, result, result.end());
+	}
 	it->owner_ = nullptr;
 	return result;
 }
 
 void Interface::updatePriority(InterfaceState* state, const InterfaceState::Priority& priority) {
+	std::scoped_lock lock(mutex_);
+
 	const auto old_prio = state->priority();
 	if (priority == old_prio)
 		return;  // nothing to do
 
 	auto it = std::find(begin(), end(), state);  // find iterator to state
-	assert(it != end());  // state should be part of this interface
+	if (it != end())  // state was removed by another worker in the meanwhile
+		return;
 
 	state->priority_ = priority;  // update priority
+
 	update(it);  // update position in ordered list
 
 	if (notify_) {

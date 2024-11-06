@@ -112,6 +112,8 @@ private:
 	double lift_object_min_dist_;
 	double lift_object_max_dist_;
 
+	int workers_;
+
 	// Place metrics
 	geometry_msgs::Pose place_pose_;
 	double place_surface_offset_;

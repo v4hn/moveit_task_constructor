@@ -604,13 +604,19 @@ void PropagatingEitherWayPrivate::compute() {
 		const InterfaceState& state = fetchStartState();
 		// enforce property initialization from INTERFACE
 		properties_.performInitFrom(Stage::INTERFACE, state.properties());
-		me->computeForward(state);
+		if (executor_)
+			executor_->silent_async(me->name(), [me, &state] { me->computeForward(state); });
+		else
+			me->computeForward(state);
 	}
 	if (hasEndState()) {
 		const InterfaceState& state = fetchEndState();
 		// enforce property initialization from INTERFACE
 		properties_.performInitFrom(Stage::INTERFACE, state.properties());
-		me->computeBackward(state);
+		if (executor_)
+			executor_->silent_async(me->name(), [me, &state] { me->computeBackward(state); });
+		else
+			me->computeBackward(state);
 	}
 }
 
@@ -695,7 +701,15 @@ bool GeneratorPrivate::canCompute() const {
 }
 
 void GeneratorPrivate::compute() {
-	static_cast<Generator*>(me_)->compute();
+	auto me{ static_cast<Generator*>(me_) };
+
+	if (executor_) {
+		executor_->silent_async(me->name(), [me] { me->compute(); });
+		// async TODO: canCompute has to return false if there is nothing left *after* this function returns
+		// but it will still return true as long as compute() has not been called
+		// and, e.g., popped the last monitored solution
+	} else
+		me->compute();
 }
 
 Generator::Generator(GeneratorPrivate* impl) : ComputeBase(impl) {}
@@ -773,6 +787,7 @@ ConnectingPrivate::StatePair ConnectingPrivate::make_pair<Interface::FORWARD>(In
 
 template <Interface::Direction dir>
 void ConnectingPrivate::newState(Interface::iterator it, Interface::UpdateFlags updated) {
+	std::lock_guard<std::mutex> lock(mutex_);
 	auto parent_pimpl = parent()->pimpl();
 	// disable current interface to break loop (jumping back and forth between both interfaces)
 	// this will be checked by notifyEnabled() below
@@ -891,11 +906,16 @@ bool ConnectingPrivate::canCompute() const {
 }
 
 void ConnectingPrivate::compute() {
+	auto me{ static_cast<Connecting*>(me_) };
+
 	const StatePair& top = pending.pop();
 	const InterfaceState& from = *top.first;
 	const InterfaceState& to = *top.second;
 	assert(from.priority().enabled() && to.priority().enabled());
-	static_cast<Connecting*>(me_)->compute(from, to);
+	if (executor_)
+		executor_->silent_async(me->name(), [me, &from, &to] { me->compute(from, to); });
+	else
+		me->compute(from, to);
 }
 
 std::ostream& operator<<(std::ostream& os, const PendingPairsPrinter& p) {

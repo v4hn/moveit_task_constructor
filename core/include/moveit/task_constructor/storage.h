@@ -51,6 +51,7 @@
 #include <deque>
 #include <cassert>
 #include <functional>
+#include <mutex>
 
 namespace planning_scene {
 MOVEIT_CLASS_FORWARD(PlanningScene);
@@ -236,6 +237,8 @@ public:
 
 private:
 	NotifyFunction notify_;
+
+	std::mutex mutex_;
 
 	// restrict access to some functions to ensure consistency
 	// (we need to set/unset InterfaceState::owner_)

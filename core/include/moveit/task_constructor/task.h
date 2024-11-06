@@ -85,6 +85,9 @@ public:
 	const std::string& name() const { return stages()->name(); }
 	void setName(const std::string& name) { stages()->setName(name); }
 
+	// use a worker pool with given number of workers (0: automatic based on std::thread::hardware_concurrency())
+	void setParallelWorkers(size_t workers = 0);
+
 	Stage* findChild(const std::string& name) const { return stages()->findChild(name); }
 	Stage* operator[](int index) const { return stages()->operator[](index); }
 

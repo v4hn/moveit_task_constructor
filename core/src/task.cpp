@@ -143,6 +143,11 @@ void Task::loadRobotModel(const std::string& robot_description) {
 		throw Exception("Task failed to construct RobotModel");
 }
 
+void Task::setParallelWorkers(size_t workers) {
+	auto impl = pimpl();
+	impl->executor_ = std::make_shared<tf::Executor>(workers > 0 ? workers : std::thread::hardware_concurrency());
+}
+
 void Task::add(Stage::pointer&& stage) {
 	stages()->add(std::move(stage));
 }
@@ -219,6 +224,7 @@ void Task::init() {
 	auto* introspection = impl->introspection_.get();
 	impl->traverseStages(
 	    [introspection, impl](Stage& stage, int /*depth*/) {
+		    stage.pimpl()->setExecutor(impl->executor_);
 		    stage.pimpl()->setIntrospection(introspection);
 		    stage.pimpl()->setPreemptRequestedMember(&impl->preempt_requested_);
 		    return true;
@@ -257,19 +263,44 @@ moveit::core::MoveItErrorCode Task::plan(size_t max_solutions) {
 		explainFailure();
 		return error_code;
 	};
+
 	const double available_time = timeout();
 	const auto start_time = std::chrono::steady_clock::now();
-	while (canCompute() && (max_solutions == 0 || numSolutions() < max_solutions)) {
-		if (impl->preempt_requested_)
-			return success_or(moveit::core::MoveItErrorCode::PREEMPTED);
-		if (std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() >= available_time)
-			return success_or(moveit::core::MoveItErrorCode::TIMED_OUT);
-		compute();
-		for (const auto& cb : impl->task_cbs_)
-			cb(*this);
-		if (impl->introspection_)
-			impl->introspection_->publishTaskState();
-	};
+
+	if (impl->executor_) {
+		while (canCompute() && (max_solutions == 0 || numSolutions() < max_solutions)) {
+			ROS_DEBUG_STREAM_NAMED("Task", "Scheduling Round");
+			if (impl->preempt_requested_)
+				return success_or(moveit::core::MoveItErrorCode::PREEMPTED);
+			if (std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() >= available_time) {
+				preempt();
+				impl->executor_->wait_for_all();
+				resetPreemptRequest();
+				return success_or(moveit::core::MoveItErrorCode::TIMED_OUT);
+			}
+			// this adds jobs from all stages to the executor
+			compute();
+			// iterative deepening: wait for all jobs in each iteration
+			impl->executor_->wait_for_all();
+			for (const auto& cb : impl->task_cbs_)
+				cb(*this);
+			if (impl->introspection_)
+				impl->introspection_->publishTaskState();
+		}
+	} else {
+		while (canCompute() && (max_solutions == 0 || numSolutions() < max_solutions)) {
+			if (impl->preempt_requested_)
+				return success_or(moveit::core::MoveItErrorCode::PREEMPTED);
+			if (std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() >= available_time)
+				return success_or(moveit::core::MoveItErrorCode::TIMED_OUT);
+			compute();
+			for (const auto& cb : impl->task_cbs_)
+				cb(*this);
+			if (impl->introspection_)
+				impl->introspection_->publishTaskState();
+		};
+	}
+
 	return success_or(moveit::core::MoveItErrorCode::PLANNING_FAILED);
 }
 

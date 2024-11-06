@@ -511,6 +511,8 @@ struct SolutionCollector
 };
 
 void SerialContainer::onNewSolution(const SolutionBase& current) {
+	std::lock_guard<std::mutex> lock(pimpl()->mutex_on_new_solution_);
+
 	ROS_DEBUG_STREAM_NAMED("SerialContainer", fmt::format("'{}' received solution of child stage '{}'", this->name(),
 	                                                      current.creator()->name()));
 

@@ -128,6 +128,8 @@ public:
 	/// mapping from stages to their id
 	std::map<const StagePrivate*, moveit_task_constructor_msgs::StageStatistics::_id_type> stage_to_id_map_;
 	boost::bimap<uint32_t, const SolutionBase*> id_solution_bimap_;
+
+	std::mutex mutex_;
 };
 
 Introspection::Introspection(const TaskPrivate* task) : impl(new IntrospectionPrivate(task, this)) {}
@@ -207,6 +209,7 @@ uint32_t Introspection::stageId(const Stage* const s) const {
 }
 
 uint32_t Introspection::solutionId(const SolutionBase& s) {
+	std::lock_guard<std::mutex> lock(impl->mutex_);
 	auto result = impl->id_solution_bimap_.left.insert(std::make_pair(1 + impl->id_solution_bimap_.size(), &s));
 	if (result.second)  // new entry
 		ROS_DEBUG_STREAM_NAMED(LOGGER, "new solution #" << result.first->first << " (" << s.creator()->name()

@@ -45,6 +45,7 @@
 
 #include <ros/console.h>
 #include <fmt/core.h>
+#include <taskflow/taskflow.hpp>
 
 #include <ostream>
 #include <chrono>
@@ -153,7 +154,7 @@ public:
 	void newSolution(const SolutionBasePtr& solution);
 	bool storeFailures() const { return introspection_ != nullptr; }
 	void runCompute() {
-		ROS_DEBUG_STREAM_NAMED("Stage", fmt::format("Computing stage '{}'", name()));
+		ROS_DEBUG_STREAM_NAMED("Stage", fmt::format("{} stage '{}'", executor_ ? "Schedule" : "Computing", name()));
 
 		if (preempted())
 			throw PreemptStageException();
@@ -179,6 +180,8 @@ public:
 		preempt_requested_ = preempt_requested;
 	}
 	bool preempted() const { return preempt_requested_ != nullptr && *preempt_requested_; }
+
+	void setExecutor(std::shared_ptr<tf::Executor>& executor) { executor_ = &*executor; }
 
 protected:
 	StagePrivate& operator=(StagePrivate&& other);
@@ -206,6 +209,8 @@ protected:
 	ordered<SolutionBaseConstPtr> solutions_;
 	std::list<SolutionBaseConstPtr> failures_;
 	std::size_t num_failures_ = 0;  // num of failures if not stored
+
+	tf::Executor* executor_{ nullptr };
 
 private:
 	// !! items write-accessed only by ContainerBasePrivate to maintain hierarchy !!
@@ -382,6 +387,8 @@ private:
 	// notify callback to get informed about newly inserted (or updated) start or end states
 	template <Interface::Direction other>
 	void newState(Interface::iterator it, Interface::UpdateFlags updated);
+
+	std::mutex mutex_;  // protect new state logic
 
 	// ordered list of pending state pairs
 	ordered<StatePair> pending;
