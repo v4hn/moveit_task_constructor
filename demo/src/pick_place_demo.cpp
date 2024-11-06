@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 	}
 
 	if (pick_place_task.plan()) {
-		ROS_INFO_NAMED(LOGNAME, "Planning succeded");
+		ROS_INFO_NAMED(LOGNAME, "Planning succeeded");
 		if (pnh.param("execute", false)) {
 			pick_place_task.execute();
 			ROS_INFO_NAMED(LOGNAME, "Execution complete");

@@ -812,7 +812,7 @@ void ConnectingPrivate::newState(Interface::iterator it, Interface::UpdateFlags 
 		InterfacePtr other_interface = pullInterface<dir>();
 		bool have_enabled_opposites = false;
 
-		// other interface states to re-enable (post-poned because otherwise order in other_interface changes during loop)
+		// other interface states to re-enable (postponed because otherwise order in other_interface changes during loop)
 		std::vector<Interface::iterator> oit_to_enable;
 		for (Interface::iterator oit = other_interface->begin(), oend = other_interface->end(); oit != oend; ++oit) {
 			if (!static_cast<Connecting*>(me_)->compatible(*it, *oit))
