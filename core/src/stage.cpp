@@ -261,8 +261,10 @@ void StagePrivate::newSolution(const SolutionBasePtr& solution) {
 	for (const auto& cb : solution_cbs_)
 		cb(*solution);
 
-	if (parent() && !solution->isFailure())
+	if (parent() && !solution->isFailure()) {
+		ROS_DEBUG_STREAM_NAMED("Stage", fmt::format("'{}' generated new solution", name()));
 		parent()->onNewSolution(*solution);
+	}
 }
 
 // To solve the chicken-egg problem in computeCost() and provide proper states at both ends of the solution,
@@ -882,7 +884,7 @@ template bool ConnectingPrivate::hasPendingOpposites<Interface::BACKWARD>(const 
                                                                           const InterfaceState* start) const;
 
 bool ConnectingPrivate::canCompute() const {
-	// ROS_DEBUG_STREAM("canCompute " << name() << ": " << pendingPairsPrinter());
+	ROS_DEBUG_STREAM_NAMED("Connecting", "canCompute " << name() << ": " << pendingPairsPrinter());
 	// Do we still have feasible pending state pairs?
 	return !pending.empty() && pending.front().first->priority().enabled() &&
 	       pending.front().second->priority().enabled();
