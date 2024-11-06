@@ -1,10 +1,14 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="execute" default="true" />
+  <arg name="workers" default="-1" />
+  <arg name="keep_running" default="true" />
 
   <!-- Run MTC pick and place -->
   <node name="mtc_tutorial" pkg="moveit_task_constructor_demo" type="pick_place_demo" output="screen">
     <param name="execute" value="$(arg execute)" />
     <rosparam command="load" file="$(find moveit_task_constructor_demo)/config/panda_config.yaml" />
+    <param name="workers" value="$(arg workers)" />
+    <param name="keep_running" value="$(arg keep_running)" />
   </node>
 </launch>

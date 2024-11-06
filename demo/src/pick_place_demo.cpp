@@ -71,7 +71,9 @@ int main(int argc, char** argv) {
 		ROS_INFO_NAMED(LOGNAME, "Planning failed");
 	}
 
-	// Keep introspection alive
-	ros::waitForShutdown();
+	// If wanted, keep introspection alive
+	if (pnh.param("keep_running", true))
+		ros::waitForShutdown();
+
 	return 0;
 }

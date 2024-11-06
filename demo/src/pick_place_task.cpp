@@ -518,7 +518,10 @@ bool PickPlaceTask::plan() {
 	ROS_INFO_NAMED(LOGNAME, "Start searching for task solutions");
 	int max_solutions = pnh_.param<int>("max_solutions", 10);
 
-	return static_cast<bool>(task_->plan(max_solutions));
+	ros::WallTime start_time = ros::WallTime::now();
+	auto result= static_cast<bool>(task_->plan(max_solutions));
+	ROS_WARN_STREAM_NAMED(LOGNAME, "Planning took " << (ros::WallTime::now() - start_time).toSec() * 1000.0 << "ms to find " << task_->numSolutions() << " solution(s)");
+	return result;
 }
 
 bool PickPlaceTask::execute() {
