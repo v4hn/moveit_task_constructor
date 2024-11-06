@@ -37,6 +37,10 @@
 #include <moveit_task_constructor_demo/pick_place_task.h>
 #include <rosparam_shortcuts/rosparam_shortcuts.h>
 
+#include <moveit/task_constructor/solvers/cartesian_path.h>
+#include <moveit/task_constructor/solvers/pipeline_planner.h>
+#include <moveit/task_constructor/solvers/joint_interpolation.h>
+
 namespace moveit_task_constructor_demo {
 
 constexpr char LOGNAME[] = "moveit_task_constructor_demo";
@@ -171,6 +175,11 @@ bool PickPlaceTask::init() {
 	cartesian_planner->setMaxAccelerationScalingFactor(1.0);
 	cartesian_planner->setStepSize(.01);
 
+	// Joint interpolation planner
+	auto joint_interpolation = std::make_shared<solvers::JointInterpolationPlanner>();
+	joint_interpolation->setMaxEffort(20.0);  // interpreted by active low-level controller
+	joint_interpolation->setMaxStep(0.1);
+
 	// Set task properties
 	t.setProperty("group", arm_group_name_);
 	t.setProperty("eef", eef_name_);
@@ -206,7 +215,7 @@ bool PickPlaceTask::init() {
 	 ***************************************************/
 	Stage* initial_state_ptr = nullptr;
 	{
-		auto stage = std::make_unique<stages::MoveTo>("open hand", sampling_planner);
+		auto stage = std::make_unique<stages::MoveTo>("open hand", joint_interpolation);
 		stage->setGroup(hand_group_name_);
 		stage->setGoal(hand_open_pose_);
 		initial_state_ptr = stage.get();  // remember start state for monitoring grasp pose generator
@@ -429,7 +438,7 @@ bool PickPlaceTask::init() {
   ---- *          Open Hand                              *
 		 *****************************************************/
 		{
-			auto stage = std::make_unique<stages::MoveTo>("open hand", sampling_planner);
+			auto stage = std::make_unique<stages::MoveTo>("open hand", joint_interpolation);
 			stage->setGroup(hand_group_name_);
 			stage->setGoal(hand_open_pose_);
 			place->insert(std::move(stage));
