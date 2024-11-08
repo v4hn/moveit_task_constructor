@@ -72,8 +72,10 @@ int main(int argc, char** argv) {
 	}
 
 	// If wanted, keep introspection alive
-	if (pnh.param("keep_running", true))
+	if (pnh.param("keep_running", true)){
+		pick_place_task.introspection();
 		ros::waitForShutdown();
+	}
 
 	return 0;
 }

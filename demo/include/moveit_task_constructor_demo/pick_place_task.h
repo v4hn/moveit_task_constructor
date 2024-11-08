@@ -74,6 +74,8 @@ public:
 
 	bool plan();
 
+	void introspection();
+
 	bool execute();
 
 private:
@@ -113,6 +115,7 @@ private:
 	double lift_object_max_dist_;
 
 	int workers_;
+	int connect_parallel_attempts_;
 
 	// Place metrics
 	geometry_msgs::Pose place_pose_;

@@ -2,6 +2,7 @@
 <launch>
   <arg name="execute" default="true" />
   <arg name="workers" default="-1" />
+  <arg name="connect_parallel_attempts" default="1" />
   <arg name="keep_running" default="true" />
 
   <!-- Run MTC pick and place -->
@@ -9,6 +10,7 @@
     <param name="execute" value="$(arg execute)" />
     <rosparam command="load" file="$(find moveit_task_constructor_demo)/config/panda_config.yaml" />
     <param name="workers" value="$(arg workers)" />
+    <param name="connect_parallel_attempts" value="$(arg connect_parallel_attempts)" />
     <param name="keep_running" value="$(arg keep_running)" />
   </node>
 </launch>

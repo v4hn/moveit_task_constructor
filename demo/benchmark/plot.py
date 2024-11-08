@@ -12,7 +12,8 @@ OUT = 'out'
 if len(sys.argv) > 1:
     OUT = sys.argv[1]
 
-SED_CMD=R"s/.*_\(.*\)workers.*took \(.*\)ms to find \(.*\) solution.*/\1,\2,\3/"
+# SED_CMD=R"s/.*_\(.*\)workers.*took \(.*\)ms to find \(.*\) solution.*/\1,\2,\3/"
+SED_CMD=R"s/.*_\(.*\)workers.*took \(.*\)ms to find \(.*\) solution.*best solution \([0-9\.]*\).*/\1,\2,\3,\4/"
 CMD=f"""
 grep -r "Planning took" {OUT}/ | sed '{SED_CMD}'
 """
@@ -20,7 +21,7 @@ grep -r "Planning took" {OUT}/ | sed '{SED_CMD}'
 proc = subprocess.Popen(CMD, shell=True, stdout=subprocess.PIPE)
 output = proc.stdout.read()
 df = pd.read_csv(io.StringIO(output.decode('utf-8')), header=None)
-df.columns = ['workers', 'time', 'solutions']
+df.columns = ['workers', 'time', 'solutions', 'best cost']
 
 print(output.decode('utf-8'))
 print(df)

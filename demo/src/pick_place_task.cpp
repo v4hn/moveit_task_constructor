@@ -148,6 +148,13 @@ void PickPlaceTask::loadParameters() {
 
 	workers_ = pnh_.param<int>("workers", -1);
 
+	connect_parallel_attempts_ = pnh_.param<int>("connect_parallel_attempts", 1);
+	if (connect_parallel_attempts_ < 1){
+		ROS_ERROR_NAMED(LOGNAME, "Invalid value for 'connect_parallel_attempts', must be at least 1. will assume 1 instead.");
+		connect_parallel_attempts_ = 1;
+	}
+
+
 	rosparam_shortcuts::shutdownIfError(LOGNAME, errors);
 }
 
@@ -161,8 +168,10 @@ bool PickPlaceTask::init() {
 	task_.reset();
 	task_.reset(new moveit::task_constructor::Task());
 
+	task_->enableIntrospection(false);
+
 	if (workers_ >= 0)
-		task_->setParallelWorkers(workers_);
+		task_->setParallelExecutor(workers_);
 
 	// Individual movement stages are collected within the Task object
 	Task& t = *task_;
@@ -238,6 +247,7 @@ bool PickPlaceTask::init() {
 		auto stage = std::make_unique<stages::Connect>(
 		    "move to pick", stages::Connect::GroupPlannerVector{ { arm_group_name_, sampling_planner } });
 		stage->setTimeout(5.0);
+		stage->setParallelAttempts(connect_parallel_attempts_);
 		stage->properties().configureInitFrom(Stage::PARENT);
 		t.add(std::move(stage));
 	}
@@ -379,6 +389,7 @@ bool PickPlaceTask::init() {
 		// Connect the grasped state to the pre-place state, i.e. realize the object transport
 		auto stage = std::make_unique<stages::Connect>(
 		    "move to place", stages::Connect::GroupPlannerVector{ { arm_group_name_, sampling_planner } });
+		stage->setParallelAttempts(connect_parallel_attempts_);
 		stage->setTimeout(5.0);
 		stage->properties().configureInitFrom(Stage::PARENT);
 		t.add(std::move(stage));
@@ -520,8 +531,18 @@ bool PickPlaceTask::plan() {
 
 	ros::WallTime start_time = ros::WallTime::now();
 	auto result= static_cast<bool>(task_->plan(max_solutions));
-	ROS_WARN_STREAM_NAMED(LOGNAME, "Planning took " << (ros::WallTime::now() - start_time).toSec() * 1000.0 << "ms to find " << task_->numSolutions() << " solution(s)");
+	ROS_WARN_STREAM_NAMED(LOGNAME, "Planning took "
+	 << (ros::WallTime::now() - start_time).toSec() * 1000.0
+	 << "ms to find "
+	 << task_->numSolutions() << " solution(s) with best solution "
+	 << task_->solutions().front()->cost()
+	 );
 	return result;
+}
+
+void PickPlaceTask::introspection() {
+	ROS_INFO_NAMED(LOGNAME, "Spinning introspection");
+	task_->enableIntrospection(true);
 }
 
 bool PickPlaceTask::execute() {
