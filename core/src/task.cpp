@@ -48,6 +48,8 @@
 
 #include "scope_guard/scope_guard.hpp"
 
+#include <taskflow/taskflow.hpp>
+
 #include <functional>
 
 namespace {
@@ -73,6 +75,24 @@ std::string rosNormalizeName(const std::string& name) {
 namespace moveit {
 namespace task_constructor {
 
+struct SynchronousExecutor : public Executor {
+	void run(const std::string& name, std::function<void()>&& fn) override {
+		fn();
+	}
+
+	void wait_for_all() override {}
+};
+
+struct TaskflowExecutor : public Executor, private tf::Executor {
+	using tf::Executor::Executor;
+
+	void run(const std::string& name, std::function<void()>&& fn) override {
+		tf::Executor::silent_async(std::move(fn));
+	}
+
+	void wait_for_all() override { tf::Executor::wait_for_all(); }
+};
+
 TaskPrivate::TaskPrivate(Task* me, const std::string& ns)
   : WrapperBasePrivate(me, std::string()), ns_(rosNormalizeName(ns)), preempt_requested_(false) {}
 
@@ -96,6 +116,7 @@ Task::Task(const std::string& ns, bool introspection, ContainerBase::pointer&& c
   : WrapperBase(new TaskPrivate(this, ns), std::move(container)) {
 	setPruning(false);
 	setTimeout(std::numeric_limits<double>::max());
+	setDirectExecutor();
 
 	// monitor state on commandline
 	// addTaskCallback(std::bind(&Task::printState, this, std::ref(std::cout)));
@@ -143,9 +164,12 @@ void Task::loadRobotModel(const std::string& robot_description) {
 		throw Exception("Task failed to construct RobotModel");
 }
 
-void Task::setParallelWorkers(size_t workers) {
-	auto impl = pimpl();
-	impl->executor_ = std::make_shared<tf::Executor>(workers > 0 ? workers : std::thread::hardware_concurrency());
+void Task::setParallelExecutor(size_t workers) {
+	pimpl()->executor_ = std::make_shared<TaskflowExecutor>(workers > 0 ? workers : std::thread::hardware_concurrency());
+}
+
+void Task::setDirectExecutor() {
+	pimpl()->executor_ = std::make_shared<SynchronousExecutor>();
 }
 
 void Task::add(Stage::pointer&& stage) {

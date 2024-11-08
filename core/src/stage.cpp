@@ -604,19 +604,13 @@ void PropagatingEitherWayPrivate::compute() {
 		const InterfaceState& state = fetchStartState();
 		// enforce property initialization from INTERFACE
 		properties_.performInitFrom(Stage::INTERFACE, state.properties());
-		if (executor_)
-			executor_->silent_async(me->name(), [me, &state] { me->computeForward(state); });
-		else
-			me->computeForward(state);
+		executor_->run(me->name(), [me, &state] { me->computeForward(state); });
 	}
 	if (hasEndState()) {
 		const InterfaceState& state = fetchEndState();
 		// enforce property initialization from INTERFACE
 		properties_.performInitFrom(Stage::INTERFACE, state.properties());
-		if (executor_)
-			executor_->silent_async(me->name(), [me, &state] { me->computeBackward(state); });
-		else
-			me->computeBackward(state);
+		executor_->run(me->name(), [me, &state] { me->computeBackward(state); });
 	}
 }
 
@@ -703,13 +697,10 @@ bool GeneratorPrivate::canCompute() const {
 void GeneratorPrivate::compute() {
 	auto me{ static_cast<Generator*>(me_) };
 
-	if (executor_) {
-		executor_->silent_async(me->name(), [me] { me->compute(); });
-		// async TODO: canCompute has to return false if there is nothing left *after* this function returns
-		// but it will still return true as long as compute() has not been called
-		// and, e.g., popped the last monitored solution
-	} else
-		me->compute();
+	executor_->run(me->name(), [me] { me->compute(); });
+	// async TODO: for canCompute has to return false if there is nothing left *after* this function returns
+	// but it will still return true as long as compute() has not been called
+	// and, e.g., popped the last monitored solution
 }
 
 Generator::Generator(GeneratorPrivate* impl) : ComputeBase(impl) {}
@@ -908,15 +899,18 @@ bool ConnectingPrivate::canCompute() const {
 void ConnectingPrivate::compute() {
 	auto me{ static_cast<Connecting*>(me_) };
 
-	// async TODO: if configured, spawn a number of tasks instead of just one
-	const StatePair& top = pending.pop();
-	const InterfaceState& from = *top.first;
-	const InterfaceState& to = *top.second;
-	assert(from.priority().enabled() && to.priority().enabled());
-	if (executor_)
-		executor_->silent_async(me->name(), [me, &from, &to] { me->compute(from, to); });
-	else
-		me->compute(from, to);
+	unsigned int attempts{ me->properties().get<unsigned int>("parallel_attempts") };
+	if (attempts < 1)
+		throw std::runtime_error("parallel_attempts must be positive");
+
+	while(!pending.empty() && attempts > 0){
+		const StatePair& top{ pending.pop() };
+		const InterfaceState& from{ *top.first };
+		const InterfaceState& to{ *top.second };
+		assert(from.priority().enabled() && to.priority().enabled());
+		executor_->run(me->name(), [me, &from, &to] { me->compute(from, to); });
+		--attempts;
+	}
 }
 
 std::ostream& operator<<(std::ostream& os, const PendingPairsPrinter& p) {
@@ -933,7 +927,9 @@ std::ostream& operator<<(std::ostream& os, const PendingPairsPrinter& p) {
 	return os;
 }
 
-Connecting::Connecting(const std::string& name) : ComputeBase(new ConnectingPrivate(this, name)) {}
+Connecting::Connecting(const std::string& name) : ComputeBase(new ConnectingPrivate(this, name)) {
+	properties().declare<unsigned int>("parallel_attempts", 1, "number of parallel attempts pairs to compute each cycle");
+}
 
 void Connecting::reset() {
 	pimpl()->pending.clear();

@@ -45,7 +45,6 @@
 
 #include <ros/console.h>
 #include <fmt/core.h>
-#include <taskflow/taskflow.hpp>
 
 #include <ostream>
 #include <chrono>
@@ -63,6 +62,15 @@ class PreemptStageException : public std::exception
 {
 public:
 	explicit PreemptStageException() {}
+};
+
+/// interface to trigger computation of a stage
+struct Executor {
+	virtual ~Executor() = default;
+
+	virtual void run(const std::string& name, std::function<void()>&& fn) = 0;
+
+	virtual void wait_for_all() = 0;
 };
 
 class ContainerBase;
@@ -181,7 +189,7 @@ public:
 	}
 	bool preempted() const { return preempt_requested_ != nullptr && *preempt_requested_; }
 
-	void setExecutor(std::shared_ptr<tf::Executor>& executor) { executor_ = &*executor; }
+	void setExecutor(std::shared_ptr<Executor>& executor) { executor_ = &*executor; }
 
 protected:
 	StagePrivate& operator=(StagePrivate&& other);
@@ -210,7 +218,7 @@ protected:
 	std::list<SolutionBaseConstPtr> failures_;
 	std::size_t num_failures_ = 0;  // num of failures if not stored
 
-	tf::Executor* executor_{ nullptr };
+	Executor* executor_{ nullptr };
 
 private:
 	// !! items write-accessed only by ContainerBasePrivate to maintain hierarchy !!

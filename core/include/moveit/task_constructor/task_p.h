@@ -40,7 +40,6 @@
 
 #include <moveit/task_constructor/container_p.h>
 #include <moveit/task_constructor/task.h>
-#include <taskflow/taskflow.hpp>
 
 namespace robot_model_loader {
 MOVEIT_CLASS_FORWARD(RobotModelLoader);
@@ -70,7 +69,7 @@ private:
 	std::unique_ptr<Introspection> introspection_;
 	std::list<Task::TaskCallback> task_cbs_;  // functions to monitor task's planning progress
 
-	std::shared_ptr<tf::Executor> executor_;
+	std::shared_ptr<Executor> executor_;
 };
 PIMPL_FUNCTIONS(Task)
 }  // namespace task_constructor
