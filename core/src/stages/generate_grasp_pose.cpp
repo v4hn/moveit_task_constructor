@@ -171,7 +171,6 @@ void GenerateGraspPose::compute() {
 	while (M_TAU-current_angle > EPSILON && M_TAU+current_angle > EPSILON) {
 		// rotate object pose about axis
 		Eigen::Isometry3d target_pose(Eigen::AngleAxisd(current_angle, rotation_axis));
-		current_angle += props.get<double>("angle_delta");
 
 		InterfaceState state(scene);
 		target_pose_msg.pose = tf2::toMsg(target_pose);
@@ -182,7 +181,7 @@ void GenerateGraspPose::compute() {
 		trajectory.setCost(0.0);
 		{
 			std::ostringstream comment;
-			comment.precision(3);
+			comment.precision(4);
 			comment << "grasp angle: " << current_angle;
 			trajectory.setComment(std::move(comment).str());
 		}
@@ -191,6 +190,8 @@ void GenerateGraspPose::compute() {
 		rviz_marker_tools::appendFrame(trajectory.markers(), target_pose_msg, 0.1, "grasp frame");
 
 		spawn(std::move(state), std::move(trajectory));
+
+		current_angle += props.get<double>("angle_delta");
 	}
 }
 }  // namespace stages
