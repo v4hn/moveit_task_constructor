@@ -148,10 +148,10 @@ void PickPlaceTask::loadParameters() {
 
 	workers_ = pnh_.param<int>("workers", -1);
 
-	connect_parallel_attempts_ = pnh_.param<int>("connect_parallel_attempts", 1);
-	if (connect_parallel_attempts_ < 1){
-		ROS_ERROR_NAMED(LOGNAME, "Invalid value for 'connect_parallel_attempts', must be at least 1. will assume 1 instead.");
-		connect_parallel_attempts_ = 1;
+	connect_compute_attempts_ = pnh_.param<int>("connect_compute_attempts", 1);
+	if (connect_compute_attempts_ < 1){
+		ROS_ERROR_NAMED(LOGNAME, "Invalid value for 'connect_compute_attempts', must be at least 1. will assume 1 instead.");
+		connect_compute_attempts_ = 1;
 	}
 
 
@@ -247,7 +247,7 @@ bool PickPlaceTask::init() {
 		auto stage = std::make_unique<stages::Connect>(
 		    "move to pick", stages::Connect::GroupPlannerVector{ { arm_group_name_, sampling_planner } });
 		stage->setTimeout(5.0);
-		stage->setParallelAttempts(connect_parallel_attempts_);
+		stage->setComputeAttempts(connect_compute_attempts_);
 		stage->properties().configureInitFrom(Stage::PARENT);
 		t.add(std::move(stage));
 	}
@@ -389,7 +389,7 @@ bool PickPlaceTask::init() {
 		// Connect the grasped state to the pre-place state, i.e. realize the object transport
 		auto stage = std::make_unique<stages::Connect>(
 		    "move to place", stages::Connect::GroupPlannerVector{ { arm_group_name_, sampling_planner } });
-		stage->setParallelAttempts(connect_parallel_attempts_);
+		stage->setComputeAttempts(connect_compute_attempts_);
 		stage->setTimeout(5.0);
 		stage->properties().configureInitFrom(Stage::PARENT);
 		t.add(std::move(stage));

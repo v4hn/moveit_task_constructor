@@ -899,9 +899,9 @@ bool ConnectingPrivate::canCompute() const {
 void ConnectingPrivate::compute() {
 	auto me{ static_cast<Connecting*>(me_) };
 
-	unsigned int attempts{ me->properties().get<unsigned int>("parallel_attempts") };
+	unsigned int attempts{ me->properties().get<unsigned int>("compute_attempts") };
 	if (attempts < 1)
-		throw std::runtime_error("parallel_attempts must be positive");
+		throw std::runtime_error("compute_attempts must be positive");
 
 	while(!pending.empty() && attempts > 0){
 		const StatePair& top{ pending.pop() };
@@ -928,7 +928,7 @@ std::ostream& operator<<(std::ostream& os, const PendingPairsPrinter& p) {
 }
 
 Connecting::Connecting(const std::string& name) : ComputeBase(new ConnectingPrivate(this, name)) {
-	properties().declare<unsigned int>("parallel_attempts", 1, "number of parallel attempts pairs to compute each cycle");
+	properties().declare<unsigned int>("compute_attempts", 1, "number of attempted pairs to compute per compute cycle");
 }
 
 void Connecting::reset() {

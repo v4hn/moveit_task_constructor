@@ -115,7 +115,7 @@ private:
 	double lift_object_max_dist_;
 
 	int workers_;
-	int connect_parallel_attempts_;
+	int connect_compute_attempts_;
 
 	// Place metrics
 	geometry_msgs::Pose place_pose_;

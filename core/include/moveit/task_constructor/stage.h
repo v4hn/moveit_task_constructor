@@ -416,7 +416,7 @@ public:
 	PRIVATE_CLASS(Connecting)
 	Connecting(const std::string& name = "connecting");
 
-	void setParallelAttempts(unsigned int attempts) { setProperty("parallel_attempts", attempts); }
+	void setComputeAttempts(unsigned int attempts) { setProperty("compute_attempts", attempts); }
 
 	void reset() override;
 
