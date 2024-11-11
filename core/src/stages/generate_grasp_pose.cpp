@@ -45,6 +45,10 @@
 #include <Eigen/Geometry>
 #include <tf2_eigen/tf2_eigen.h>
 
+#define M_TAU (2. * M_PI)
+
+constexpr double EPSILON = 1e-6;
+
 namespace moveit {
 namespace task_constructor {
 namespace stages {
@@ -164,7 +168,7 @@ void GenerateGraspPose::compute() {
 	Eigen::Vector3d rotation_axis = props.get<Eigen::Vector3d>("rotation_axis");
 
 	double current_angle = 0.0;
-	while (current_angle < 2. * M_PI && current_angle > -2. * M_PI) {
+	while (M_TAU-current_angle > EPSILON && M_TAU+current_angle > EPSILON) {
 		// rotate object pose about axis
 		Eigen::Isometry3d target_pose(Eigen::AngleAxisd(current_angle, rotation_axis));
 		current_angle += props.get<double>("angle_delta");
