@@ -262,7 +262,7 @@ void StagePrivate::newSolution(const SolutionBasePtr& solution) {
 		cb(*solution);
 
 	if (parent() && !solution->isFailure()) {
-		ROS_DEBUG_STREAM_NAMED("Stage", fmt::format("'{}' generated new solution", name()));
+		ROS_DEBUG_STREAM_NAMED("Stage", fmt::format("New solution from '{}'", name()));
 		parent()->onNewSolution(*solution);
 	}
 }
