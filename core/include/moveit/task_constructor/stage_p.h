@@ -162,7 +162,7 @@ public:
 	void newSolution(const SolutionBasePtr& solution);
 	bool storeFailures() const { return introspection_ != nullptr; }
 	void runCompute() {
-		ROS_DEBUG_STREAM_NAMED("Stage", fmt::format("{} stage '{}'", executor_ ? "Schedule" : "Computing", name()));
+		ROS_DEBUG_STREAM_NAMED("Stage", fmt::format("Computing stage '{}'", name()));
 
 		if (preempted())
 			throw PreemptStageException();
