@@ -87,7 +87,7 @@ struct TaskflowExecutor : public Executor, private tf::Executor {
 	using tf::Executor::Executor;
 
 	void run(const std::string& name, std::function<void()>&& fn) override {
-		tf::Executor::silent_async(std::move(fn));
+		tf::Executor::silent_async(name, std::move(fn));
 	}
 
 	void wait_for_all() override { tf::Executor::wait_for_all(); }
