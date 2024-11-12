@@ -96,7 +96,7 @@ planning_pipeline::PlanningPipelinePtr PipelinePlanner::create(const PipelinePla
 		planner = std::make_shared<planning_pipeline::PlanningPipeline>(spec.model, ros::NodeHandle(pipeline_ns),
 		                                                                PLUGIN_PARAMETER_NAME, spec.adapter_param);
 		// store in cache
-		entry = planner;
+		//entry = planner;
 	}
 	return planner;
 }
