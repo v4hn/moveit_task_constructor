@@ -291,6 +291,8 @@ moveit::core::MoveItErrorCode Task::plan(size_t max_solutions) {
 	const double available_time = timeout();
 	const auto start_time = std::chrono::steady_clock::now();
 
+	auto printed_state{ start_time };
+
 	while (canCompute() && (max_solutions == 0 || numSolutions() < max_solutions)) {
 		ROS_DEBUG_STREAM_NAMED("Task", "Scheduling Round");
 		if (impl->preempt_requested_)
@@ -307,6 +309,10 @@ moveit::core::MoveItErrorCode Task::plan(size_t max_solutions) {
 		impl->executor_->wait_for_all();
 		for (const auto& cb : impl->task_cbs_)
 			cb(*this);
+		if (std::chrono::steady_clock::now() - printed_state > std::chrono::seconds(30)) {
+			this->printState();
+			printed_state = std::chrono::steady_clock::now();
+		}
 		if (impl->introspection_)
 			impl->introspection_->publishTaskState();
 	}
