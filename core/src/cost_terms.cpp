@@ -225,7 +225,7 @@ double LinkMotion::operator()(const SubTrajectory& s, std::string& comment) cons
 
 	if (!traj->getWayPoint(0).knowsFrameTransform(link_name)) {
 		comment = fmt::format("LinkMotionCost: frame '{}' unknown in trajectory", link_name);
-		return std::numeric_limits<double>::infinity();
+		return 0.0;  // assume no motion (e.g., for a currently not attached object)
 	}
 
 	double distance{ 0.0 };
