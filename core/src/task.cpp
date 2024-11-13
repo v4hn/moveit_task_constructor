@@ -75,15 +75,15 @@ std::string rosNormalizeName(const std::string& name) {
 namespace moveit {
 namespace task_constructor {
 
-struct SynchronousExecutor : public Executor {
-	void run(const std::string& name, std::function<void()>&& fn) override {
-		fn();
-	}
+struct SynchronousExecutor : public Executor
+{
+	void run(const std::string& name, std::function<void()>&& fn) override { fn(); }
 
 	void wait_for_all() override {}
 };
 
-struct TaskflowExecutor : public Executor, private tf::Executor {
+struct TaskflowExecutor : public Executor, private tf::Executor
+{
 	using tf::Executor::Executor;
 
 	void run(const std::string& name, std::function<void()>&& fn) override {
@@ -291,38 +291,24 @@ moveit::core::MoveItErrorCode Task::plan(size_t max_solutions) {
 	const double available_time = timeout();
 	const auto start_time = std::chrono::steady_clock::now();
 
-	if (impl->executor_) {
-		while (canCompute() && (max_solutions == 0 || numSolutions() < max_solutions)) {
-			ROS_DEBUG_STREAM_NAMED("Task", "Scheduling Round");
-			if (impl->preempt_requested_)
-				return success_or(moveit::core::MoveItErrorCode::PREEMPTED);
-			if (std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() >= available_time) {
-				preempt();
-				impl->executor_->wait_for_all();
-				resetPreemptRequest();
-				return success_or(moveit::core::MoveItErrorCode::TIMED_OUT);
-			}
-			// this adds jobs from all stages to the executor
-			compute();
-			// iterative deepening: wait for all jobs in each iteration
+	while (canCompute() && (max_solutions == 0 || numSolutions() < max_solutions)) {
+		ROS_DEBUG_STREAM_NAMED("Task", "Scheduling Round");
+		if (impl->preempt_requested_)
+			return success_or(moveit::core::MoveItErrorCode::PREEMPTED);
+		if (std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() >= available_time) {
+			preempt();
 			impl->executor_->wait_for_all();
-			for (const auto& cb : impl->task_cbs_)
-				cb(*this);
-			if (impl->introspection_)
-				impl->introspection_->publishTaskState();
+			resetPreemptRequest();
+			return success_or(moveit::core::MoveItErrorCode::TIMED_OUT);
 		}
-	} else {
-		while (canCompute() && (max_solutions == 0 || numSolutions() < max_solutions)) {
-			if (impl->preempt_requested_)
-				return success_or(moveit::core::MoveItErrorCode::PREEMPTED);
-			if (std::chrono::duration<double>(std::chrono::steady_clock::now() - start_time).count() >= available_time)
-				return success_or(moveit::core::MoveItErrorCode::TIMED_OUT);
-			compute();
-			for (const auto& cb : impl->task_cbs_)
-				cb(*this);
-			if (impl->introspection_)
-				impl->introspection_->publishTaskState();
-		};
+		// this adds jobs from all stages to the executor
+		compute();
+		// iterative deepening: wait for all jobs in each iteration
+		impl->executor_->wait_for_all();
+		for (const auto& cb : impl->task_cbs_)
+			cb(*this);
+		if (impl->introspection_)
+			impl->introspection_->publishTaskState();
 	}
 
 	return success_or(moveit::core::MoveItErrorCode::PLANNING_FAILED);
