@@ -152,6 +152,7 @@ void Connect::compute(const InterfaceState& from, const InterfaceState& to) {
 	bool success = false;
 	std::string comment = "No planners specified";
 	std::vector<double> positions;
+	std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
 	for (const GroupPlannerVector::value_type& pair : planner_) {
 		// set intermediate goal state
 		planning_scene::PlanningScenePtr end = start->diff();
@@ -181,6 +182,7 @@ void Connect::compute(const InterfaceState& from, const InterfaceState& to) {
 		// continue from reached state
 		start = end;
 	}
+	std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - start_time;
 
 	SolutionBasePtr solution;
 	if (success && mode != SEQUENTIAL)  // try to merge
@@ -189,6 +191,11 @@ void Connect::compute(const InterfaceState& from, const InterfaceState& to) {
 		solution = makeSequential(sub_trajectories, intermediate_scenes, from, to);
 	if (!success)  // error during sequential planning
 		solution->markAsFailure(comment);
+
+	// add property to solution with time taken to compute
+	if (solution->comment().empty())
+		solution->setComment(fmt::format("Computed in {:.3f}s", elapsed.count()));
+
 	connect(from, to, solution);
 }
 
