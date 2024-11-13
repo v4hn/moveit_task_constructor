@@ -65,22 +65,10 @@ void GeneratePlacePose::onNewSolution(const SolutionBase& s) {
 	bool frame_found = false;
 	const moveit::core::LinkModel* link = nullptr;
 	scene->getCurrentState().getFrameInfo(object, link, frame_found);
-	std::string msg;
 	if (!frame_found)
-		msg = "frame '" + object + "' is not known";
+		throw InitStageException(*this, "frame '" + object + "' is not known");
 	if (!link)
-		msg = "frame '" + object + "' is not attached to the robot";
-	if (!msg.empty()) {
-		if (storeFailures()) {
-			InterfaceState state(scene);
-			SubTrajectory solution;
-			solution.markAsFailure();
-			solution.setComment(msg);
-			spawn(std::move(state), std::move(solution));
-		} else
-			ROS_WARN_STREAM_NAMED("GeneratePlacePose", msg);
-		return;
-	}
+		throw InitStageException(*this, "frame '" + object + "' is not attached to the robot");
 
 	upstream_solutions_.push(&s);
 }
