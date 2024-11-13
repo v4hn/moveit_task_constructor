@@ -140,6 +140,8 @@ void GeneratePlacePose::compute() {
 			case shapes::SPHERE:  // keep original orientation and rotate about world's z
 				spawner(target_pose, z_flips);
 				return;
+			case shapes::MESH:
+				spawner(target_pose, z_flips);
 			default:
 				break;
 		}
