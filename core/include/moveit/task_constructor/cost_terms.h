@@ -110,11 +110,24 @@ private:
 
 namespace cost {
 
-/// add a constant cost to each solution
+/// set a constant cost for solutions
 class Constant : public CostTerm
 {
 public:
 	Constant(double c) : cost{ c } {};
+
+	double operator()(const SubTrajectory& s, std::string& comment) const override;
+	double operator()(const SolutionSequence& s, std::string& comment) const override;
+	double operator()(const WrappedSolution& s, std::string& comment) const override;
+
+	double cost;
+};
+
+/// add a constant cost to each solution's current cost
+class AddConstant : public CostTerm
+{
+public:
+	AddConstant(double c) : cost{ c } {};
 
 	double operator()(const SubTrajectory& s, std::string& comment) const override;
 	double operator()(const SolutionSequence& s, std::string& comment) const override;
@@ -165,7 +178,7 @@ public:
 	double operator()(const SubTrajectory& s, std::string& comment) const override;
 };
 
-/** length of Cartesian trajection of a link */
+/** length of Cartesian trajectory of a link */
 class LinkMotion : public TrajectoryCostTerm
 {
 public:

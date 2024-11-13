@@ -107,6 +107,18 @@ double Constant::operator()(const WrappedSolution& /*s*/, std::string& /*comment
 	return cost;
 }
 
+double AddConstant::operator()(const SubTrajectory& s, std::string& comment) const {
+	return s.cost() + cost;
+}
+
+double AddConstant::operator()(const SolutionSequence& s, std::string& comment) const {
+	return s.cost() + cost;
+}
+
+double AddConstant::operator()(const WrappedSolution& s, std::string& comment) const {
+	return s.cost() + cost;
+}
+
 PathLength::PathLength(std::vector<std::string> joints) {
 	for (auto& j : joints)
 		this->joints.emplace(std::move(j), 1.0);
