@@ -65,12 +65,18 @@ double CostTerm::operator()(const WrappedSolution& s, std::string& /*comment*/) 
 double TrajectoryCostTerm::operator()(const SolutionSequence& s, std::string& comment) const {
 	double cost{ 0.0 };
 	std::string subcomment;
+	int comment_cnt{ 0 };
+
 	for (auto& solution : s.solutions()) {
 		cost += solution->computeCost((*this), subcomment);
 		if (!subcomment.empty()) {
-			if (!comment.empty())
-				comment.append(", ");
-			comment.append(subcomment);
+			if (++comment_cnt == 1) {
+				if (!comment.empty())
+					comment.append(", ");
+				comment.append(subcomment);
+			} else if (comment_cnt == 2)
+				comment.append(", ...");
+
 			subcomment.clear();
 		}
 	}
