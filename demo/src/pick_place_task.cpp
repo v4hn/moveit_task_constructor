@@ -173,6 +173,9 @@ bool PickPlaceTask::init() {
 	if (workers_ >= 0)
 		task_->setParallelExecutor(workers_);
 
+	int max_solutions = pnh_.param<int>("max_solutions", 10);
+	task_->setMaxSolutions(static_cast<size_t>(max_solutions));
+
 	// Individual movement stages are collected within the Task object
 	Task& t = *task_;
 	t.stages()->setName(task_name_);

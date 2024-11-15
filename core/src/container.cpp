@@ -699,6 +699,8 @@ void SerialContainerPrivate::validateConnectivity() const {
 }
 
 bool SerialContainer::canCompute() const {
+	if (solutions().size() >= maxSolutions())
+		return false;
 	for (const auto& stage : pimpl()->children()) {
 		if (stage->pimpl()->canCompute())
 			return true;
@@ -839,7 +841,7 @@ Stage* WrapperBase::wrapped() {
 }
 
 bool WrapperBase::canCompute() const {
-	return wrapped()->pimpl()->canCompute();
+	return solutions().size() < maxSolutions() && wrapped()->pimpl()->canCompute();
 }
 
 void WrapperBase::compute() {
@@ -847,6 +849,8 @@ void WrapperBase::compute() {
 }
 
 bool Alternatives::canCompute() const {
+	if (solutions().size() >= maxSolutions())
+		return false;
 	for (const auto& stage : pimpl()->children())
 		if (stage->pimpl()->canCompute())
 			return true;
@@ -938,6 +942,9 @@ void FallbacksPrivateCommon::reset() {
 }
 
 bool FallbacksPrivateCommon::canCompute() const {
+	if (solutions_.size() >= me()->maxSolutions())
+		return false;
+
 	while (current_ != children().end() &&  // not completely exhausted
 	       !(*current_)->pimpl()->canCompute())  // but current child cannot compute
 		return const_cast<FallbacksPrivateCommon*>(this)->nextJob();  // advance to next job
@@ -1059,6 +1066,9 @@ void FallbacksPrivateConnect::propagateStateUpdate(Interface::iterator external,
 }
 
 bool FallbacksPrivateConnect::canCompute() const {
+	if (solutions_.size() >= me()->maxSolutions())
+		return false;
+
 	for (auto it = children().begin(), end = children().end(); it != end; ++it)
 		if ((*it)->pimpl()->canCompute()) {
 			active_ = it;
@@ -1136,6 +1146,8 @@ void Merger::init(const core::RobotModelConstPtr& robot_model) {
 Merger::Merger(MergerPrivate* impl) : ParallelContainerBase(impl) {}
 
 bool Merger::canCompute() const {
+	if (solutions().size() >= maxSolutions())
+		return false;
 	for (const auto& stage : pimpl()->children())
 		if (stage->pimpl()->canCompute())
 			return true;
