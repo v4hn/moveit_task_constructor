@@ -124,13 +124,18 @@ public:
 	using WrapperBase::pruning;
 	using WrapperBase::setPruning;
 
+	using WrapperBase::maxSolutions;
+	using WrapperBase::setMaxSolutions;
+
 	/// reset all stages
 	void reset() final;
 	/// initialize all stages with given scene
 	void init();
 
 	/// reset, init scene (if not yet done), and init all stages, then start planning
-	moveit::core::MoveItErrorCode plan(size_t max_solutions = 0);
+	moveit::core::MoveItErrorCode plan();
+	/// explicit overload to plan for a given number of solutions independent of max_solutions property
+	moveit::core::MoveItErrorCode plan(size_t max_solutions);
 
 	/// interrupt current planning
 	void preempt();

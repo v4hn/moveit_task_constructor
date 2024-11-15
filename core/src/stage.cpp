@@ -312,7 +312,7 @@ Stage::Stage(StagePrivate* impl) : pimpl_(impl) {
 	assert(impl);
 	auto& p = properties();
 	p.declare<double>("timeout", "timeout per run (s)");
-	p.declare<size_t>("max_solutions", "maximum number of valid solutions to keep");
+	p.declare<size_t>("max_solutions", std::numeric_limits<size_t>::max(), "maximum number of valid solutions to keep");
 
 	p.declare<std::string>("marker_ns", name(), "marker namespace");
 	p.declare<TrajectoryExecutionInfo>("trajectory_execution_info", TrajectoryExecutionInfo(),
@@ -594,7 +594,7 @@ const InterfaceState& PropagatingEitherWayPrivate::fetchEndState() {
 }
 
 bool PropagatingEitherWayPrivate::canCompute() const {
-	return hasStartState() || hasEndState();
+	return (hasStartState() || hasEndState()) && this->solutions_.size() < properties_.get<size_t>("max_solutions");
 }
 
 void PropagatingEitherWayPrivate::compute() {
@@ -691,7 +691,8 @@ InterfaceFlags GeneratorPrivate::requiredInterface() const {
 }
 
 bool GeneratorPrivate::canCompute() const {
-	return static_cast<Generator*>(me_)->canCompute();
+	return static_cast<Generator*>(me_)->canCompute() &&
+	       this->solutions_.size() < properties_.get<size_t>("max_solutions");
 }
 
 void GeneratorPrivate::compute() {
@@ -893,7 +894,8 @@ bool ConnectingPrivate::canCompute() const {
 	ROS_DEBUG_STREAM_NAMED("Connecting", "canCompute " << name() << ": " << pendingPairsPrinter());
 	// Do we still have feasible pending state pairs?
 	return !pending.empty() && pending.front().first->priority().enabled() &&
-	       pending.front().second->priority().enabled();
+	       pending.front().second->priority().enabled() &&
+	       this->solutions_.size() < properties_.get<size_t>("max_solutions");
 }
 
 void ConnectingPrivate::compute() {
@@ -903,7 +905,7 @@ void ConnectingPrivate::compute() {
 	if (attempts < 1)
 		throw std::runtime_error("compute_attempts must be positive");
 
-	while(!pending.empty() && attempts > 0){
+	while (!pending.empty() && attempts > 0) {
 		const StatePair& top{ pending.pop() };
 		const InterfaceState& from{ *top.first };
 		const InterfaceState& to{ *top.second };

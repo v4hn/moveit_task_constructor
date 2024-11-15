@@ -177,6 +177,7 @@ void export_core(pybind11::module& m) {
 	auto stage =
 	    properties::class_<Stage, PyStage<>>(m, "Stage", "Abstract base class of all stages.")
 	        .property<double>("timeout", "float: Maximally allowed time [s] per computation step")
+	        .property<size_t>("max_solutions", "maximum number of solutions to store")
 	        .property<std::string>("marker_ns", "str: Namespace for any markers that are associated to the stage")
 	        .def_property("forwarded_properties", getForwardedProperties, setForwardedProperties,
 	                      "list: set of properties forwarded from input to output InterfaceState")
@@ -463,8 +464,10 @@ void export_core(pybind11::module& m) {
 	        "Specify a function to calculate trajectory costs")
 	    .def("reset", &Task::reset, "Reset task (and all its stages)")
 	    .def("init", py::overload_cast<>(&Task::init), "Initialize the task (and all its stages)")
-	    .def("plan", &Task::plan, "max_solutions"_a = 0, R"(
-			Reset, init, and plan. Planning is limited to ``max_allowed_solutions``.
+	    .def("plan", py::overload_cast<>(&Task::plan), R"(
+			Reset, init, and plan. Planning respects ``max_solutions`` property.)")
+	    .def("plan", py::overload_cast<size_t>(&Task::plan), "max_solutions"_a, R"(
+			Reset, init, and plan. Planning is limited to ``max_solutions``.
 			Returns if planning was successful.)")
 	    .def("preempt", &Task::preempt, "Interrupt current planning (or execution)")
 	    .def(

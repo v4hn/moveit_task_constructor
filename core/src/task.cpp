@@ -272,7 +272,16 @@ void Task::compute() {
 	}
 }
 
+moveit::core::MoveItErrorCode Task::plan() {
+	return plan(maxSolutions());
+}
+
 moveit::core::MoveItErrorCode Task::plan(size_t max_solutions) {
+	if (max_solutions == 0) {
+		// 0 does not make sense for this call, so interpret it as unlimited
+		max_solutions = std::numeric_limits<size_t>::max();
+	}
+
 	// ensure the preempt request is resetted once this method exits
 	auto guard = sg::make_scope_guard([this]() noexcept { this->resetPreemptRequest(); });
 
@@ -293,7 +302,7 @@ moveit::core::MoveItErrorCode Task::plan(size_t max_solutions) {
 
 	auto printed_state{ start_time };
 
-	while (canCompute() && (max_solutions == 0 || numSolutions() < max_solutions)) {
+	while (canCompute() && numSolutions() < max_solutions) {
 		ROS_DEBUG_STREAM_NAMED("Task", "Scheduling Round");
 		if (impl->preempt_requested_)
 			return success_or(moveit::core::MoveItErrorCode::PREEMPTED);
