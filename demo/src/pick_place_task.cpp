@@ -149,11 +149,11 @@ void PickPlaceTask::loadParameters() {
 	workers_ = pnh_.param<int>("workers", -1);
 
 	connect_compute_attempts_ = pnh_.param<int>("connect_compute_attempts", 1);
-	if (connect_compute_attempts_ < 1){
-		ROS_ERROR_NAMED(LOGNAME, "Invalid value for 'connect_compute_attempts', must be at least 1. will assume 1 instead.");
+	if (connect_compute_attempts_ < 1) {
+		ROS_ERROR_NAMED(LOGNAME,
+		                "Invalid value for 'connect_compute_attempts', must be at least 1. will assume 1 instead.");
 		connect_compute_attempts_ = 1;
 	}
-
 
 	rosparam_shortcuts::shutdownIfError(LOGNAME, errors);
 }
@@ -527,16 +527,12 @@ bool PickPlaceTask::init() {
 
 bool PickPlaceTask::plan() {
 	ROS_INFO_NAMED(LOGNAME, "Start searching for task solutions");
-	int max_solutions = pnh_.param<int>("max_solutions", 10);
-
 	ros::WallTime start_time = ros::WallTime::now();
-	auto result= static_cast<bool>(task_->plan(max_solutions));
-	ROS_WARN_STREAM_NAMED(LOGNAME, "Planning took "
-	 << (ros::WallTime::now() - start_time).toSec() * 1000.0
-	 << "ms to find "
-	 << task_->numSolutions() << " solution(s) with best solution "
-	 << task_->solutions().front()->cost()
-	 );
+	auto result = static_cast<bool>(task_->plan());
+	ROS_WARN_STREAM_NAMED(LOGNAME, "Planning took " << (ros::WallTime::now() - start_time).toSec() * 1000.0
+	                                                << "ms to find " << task_->numSolutions()
+	                                                << " solution(s) with best solution "
+	                                                << task_->solutions().front()->cost());
 	return result;
 }
 
