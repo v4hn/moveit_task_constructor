@@ -56,6 +56,8 @@ public:
 	void compute() override;
 
 	void setObject(const std::string& object) { setProperty("object", object); }
+	void setAllowZFlip(bool allow) { setProperty("allow_z_flip", allow); }
+	void setRotations(int angles) { setProperty("rotations", angles); }
 
 protected:
 	void onNewSolution(const SolutionBase& s) override;

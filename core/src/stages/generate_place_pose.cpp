@@ -55,6 +55,7 @@ GeneratePlacePose::GeneratePlacePose(const std::string& name) : GeneratePose(nam
 	auto& p = properties();
 	p.declare<std::string>("object");
 	p.declare<bool>("allow_z_flip", false, "allow placing objects upside down");
+	p.declare<int>("rotations", 1, "considered amount of object orientations about z-axis");
 }
 
 void GeneratePlacePose::onNewSolution(const SolutionBase& s) {
@@ -95,7 +96,7 @@ void GeneratePlacePose::compute() {
 	scene->getTransforms().transformPose(pose_msg.header.frame_id, target_pose, target_pose);
 
 	// spawn the nominal target object pose, considering flip about z and rotations about z-axis
-	auto spawner = [&s, &scene, &ik_frame, this](const Eigen::Isometry3d& nominal, uint z_flips, uint z_rotations = 10) {
+	auto spawner = [&s, &scene, &ik_frame, this](const Eigen::Isometry3d& nominal, uint z_flips, uint z_rotations) {
 		for (uint flip = 0; flip <= z_flips; ++flip) {
 			// flip about object's x-axis
 			Eigen::Isometry3d object = nominal * Eigen::AngleAxisd(flip * M_PI, Eigen::Vector3d::UnitX());
@@ -126,22 +127,25 @@ void GeneratePlacePose::compute() {
 	};
 
 	uint z_flips = props.get<bool>("allow_z_flip") ? 1 : 0;
+	uint z_rotations = props.get<int>("rotations");
+	if (z_rotations < 1)
+		throw InitStageException(*this, "rotations must be >= 1");
 	if (object && object->getShapes().size() == 1) {
 		switch (object->getShapes()[0]->type) {
 			case shapes::CYLINDER:
-				spawner(target_pose, z_flips);
+				spawner(target_pose, z_flips, z_rotations);
 				return;
 
 			case shapes::BOX: {  // consider 180/90 degree rotations about z axis
 				const double* dims = static_cast<const shapes::Box&>(*object->getShapes()[0]).size;
-				spawner(target_pose, z_flips, (std::abs(dims[0] - dims[1]) < 1e-5) ? 4 : 2);
+				spawner(target_pose, z_flips, z_rotations);
 				return;
 			}
 			case shapes::SPHERE:  // keep original orientation and rotate about world's z
-				spawner(target_pose, z_flips);
+				spawner(target_pose, z_flips, z_rotations);
 				return;
 			case shapes::MESH:
-				spawner(target_pose, z_flips);
+				spawner(target_pose, z_flips, z_rotations);
 			default:
 				break;
 		}
