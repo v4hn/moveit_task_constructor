@@ -810,6 +810,10 @@ void ParallelContainerBase::spawn(InterfaceState&& state, SubTrajectory&& t) {
 	pimpl()->StagePrivate::spawn(std::move(state), std::make_shared<SubTrajectory>(std::move(t)));
 }
 
+void ParallelContainerBase::spawn(InterfaceState&& from, InterfaceState&& to, SubTrajectory&& t) {
+	pimpl()->StagePrivate::spawn(std::move(from), std::move(to), std::make_shared<SubTrajectory>(std::move(t)));
+}
+
 void ParallelContainerBase::sendForward(const InterfaceState& from, InterfaceState&& to, SubTrajectory&& t) {
 	pimpl()->StagePrivate::sendForward(from, std::move(to), std::make_shared<SubTrajectory>(std::move(t)));
 }
