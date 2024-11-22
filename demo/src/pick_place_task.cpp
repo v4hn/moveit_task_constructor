@@ -326,7 +326,7 @@ bool PickPlaceTask::init() {
   ---- *               Close Hand                      *
 		 ***************************************************/
 		{
-			auto stage = std::make_unique<stages::MoveTo>("close hand", sampling_planner);
+			auto stage = std::make_unique<stages::MoveTo>("close hand", joint_interpolation);
 			stage->setGroup(hand_group_name_);
 			stage->setGoal(hand_close_pose_);
 			grasp->insert(std::move(stage));
