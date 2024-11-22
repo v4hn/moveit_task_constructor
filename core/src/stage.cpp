@@ -905,6 +905,7 @@ void ConnectingPrivate::compute() {
 	if (attempts < 1)
 		throw std::runtime_error("compute_attempts must be positive");
 
+	// TODO: workers might affect each other here with parallel executor?
 	while (!pending.empty() && attempts > 0) {
 		const StatePair& top{ pending.pop() };
 		const InterfaceState& from{ *top.first };
