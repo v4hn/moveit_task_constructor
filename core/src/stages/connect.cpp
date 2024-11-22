@@ -50,7 +50,8 @@ namespace moveit {
 namespace task_constructor {
 namespace stages {
 
-Connect::Connect(const std::string& name, const GroupPlannerVector& planners) : Connecting(name), planner_(planners) {
+Connect::Connect(const std::string& name, const GroupPlannerVector& planners) : Connecting(name) {
+	planners_.emplace_back(planners);
 	setTimeout(1.0);
 	setCostTerm(std::make_unique<cost::PathLength>());
 
@@ -71,15 +72,23 @@ void Connect::reset() {
 	states_.clear();
 }
 
+Connect::GroupPlannerVector copyGroupPlannerVector(Connect::GroupPlannerVector& planners) {
+	Connect::GroupPlannerVector copy;
+	for (const auto& pair : planners) {
+		copy.emplace_back(pair.first, pair.second->clone());
+	}
+	return copy;
+}
+
 void Connect::init(const core::RobotModelConstPtr& robot_model) {
 	Connecting::init(robot_model);
 
 	InitStageException errors;
-	if (planner_.empty())
+	if (planners_.at(0).empty())
 		errors.push_back(*this, "empty set of groups");
 
 	std::vector<const moveit::core::JointModelGroup*> groups;
-	for (const GroupPlannerVector::value_type& pair : planner_) {
+	for (const GroupPlannerVector::value_type& pair : planners_.at(0)) {
 		if (!robot_model->hasJointModelGroup(pair.first))
 			errors.push_back(*this, "invalid group: " + pair.first);
 		else if (!pair.second)
@@ -96,12 +105,20 @@ void Connect::init(const core::RobotModelConstPtr& robot_model) {
 		try {
 			merged_jmg_.reset(task_constructor::merge(groups));
 		} catch (const std::runtime_error& e) {
+			// TODO: this should throw too
 			ROS_INFO_STREAM_NAMED("Connect", fmt::format("{}: {}. Disabling merging.", this->name(), e.what()));
 		}
 	}
 
 	if (errors)
 		throw errors;
+
+	unsigned int required_planners = properties().get<unsigned int>("compute_attempts");
+	planners_.reserve(required_planners);
+
+	for (unsigned int i = 1; i < required_planners; ++i) {
+		planners_.push_back(copyGroupPlannerVector(planners_.at(0)));
+	}
 }
 
 bool Connect::compatible(const InterfaceState& from_state, const InterfaceState& to_state) const {
@@ -113,7 +130,7 @@ bool Connect::compatible(const InterfaceState& from_state, const InterfaceState&
 
 	// compose set of joint names we plan for
 	std::set<std::string> planned_joint_names;
-	for (const GroupPlannerVector::value_type& pair : planner_) {
+	for (const GroupPlannerVector::value_type& pair : planners_.at(0)) {
 		const moveit::core::JointModelGroup* jmg = from.getJointModelGroup(pair.first);
 		const auto& names = jmg->getJointModelNames();
 		planned_joint_names.insert(names.begin(), names.end());
@@ -135,7 +152,7 @@ bool Connect::compatible(const InterfaceState& from_state, const InterfaceState&
 	return true;
 }
 
-void Connect::compute(const InterfaceState& from, const InterfaceState& to) {
+void Connect::compute(const InterfaceState& from, const InterfaceState& to, unsigned int attempt) {
 	const auto& props = properties();
 	double timeout = this->timeout();
 	MergeMode mode = props.get<MergeMode>("merge_mode");
@@ -153,7 +170,7 @@ void Connect::compute(const InterfaceState& from, const InterfaceState& to) {
 	std::string comment = "No planners specified";
 	std::vector<double> positions;
 	std::chrono::time_point<std::chrono::steady_clock> start_time = std::chrono::steady_clock::now();
-	for (const GroupPlannerVector::value_type& pair : planner_) {
+	for (const GroupPlannerVector::value_type& pair : planners_.at(attempt)) {
 		// set intermediate goal state
 		planning_scene::PlanningScenePtr end = start->diff();
 		const moveit::core::JointModelGroup* jmg = final_goal_state.getJointModelGroup(pair.first);

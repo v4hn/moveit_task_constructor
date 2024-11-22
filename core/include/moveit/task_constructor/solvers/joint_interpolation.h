@@ -56,6 +56,8 @@ class JointInterpolationPlanner : public PlannerInterface
 public:
 	JointInterpolationPlanner();
 
+	PlannerInterfacePtr clone() const override;
+
 	void setMaxStep(double max_step) { setProperty("max_step", max_step); }
 	void setMaxEffort(double max_effort) { setProperty("max_effort", max_effort); }
 

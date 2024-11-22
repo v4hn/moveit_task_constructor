@@ -37,6 +37,7 @@
 */
 
 #include <moveit/task_constructor/solvers/joint_interpolation.h>
+#include <moveit/task_constructor/stage.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/trajectory_processing/time_parameterization.h>
 
@@ -53,6 +54,12 @@ JointInterpolationPlanner::JointInterpolationPlanner() {
 	p.declare<double>("max_step", 0.1, "max joint step");
 	// allow passing max_effort to GripperCommand actions via
 	p.declare<double>("max_effort", "max_effort for GripperCommand actions");
+}
+
+PlannerInterfacePtr JointInterpolationPlanner::clone() const {
+	auto clone = PlannerInterfacePtr(new JointInterpolationPlanner());
+	clone->properties().performInitFrom(Stage::MANUAL, properties());
+	return clone;
 }
 
 void JointInterpolationPlanner::init(const core::RobotModelConstPtr& /*robot_model*/) {}

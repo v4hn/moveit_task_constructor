@@ -61,6 +61,11 @@ public:
 	using PlannerList = std::vector<solvers::PlannerInterfacePtr>;
 	using PlannerList::PlannerList;  // inherit all std::vector constructors
 
+	PlannerInterfacePtr clone() const override {
+		assert(false && "not implemented");
+		return nullptr;
+	}  // TODO
+
 	void init(const moveit::core::RobotModelConstPtr& robot_model) override;
 
 	Result plan(const planning_scene::PlanningSceneConstPtr& from, const planning_scene::PlanningSceneConstPtr& to,

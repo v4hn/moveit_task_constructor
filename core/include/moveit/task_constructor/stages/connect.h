@@ -83,7 +83,7 @@ public:
 
 	void reset() override;
 	void init(const moveit::core::RobotModelConstPtr& robot_model) override;
-	void compute(const InterfaceState& from, const InterfaceState& to) override;
+	void compute(const InterfaceState& from, const InterfaceState& to, unsigned int attempt) override;
 
 protected:
 	SolutionSequencePtr makeSequential(const std::vector<robot_trajectory::RobotTrajectoryConstPtr>& sub_trajectories,
@@ -94,7 +94,7 @@ protected:
 	                       const moveit::core::RobotState& state);
 
 protected:
-	GroupPlannerVector planner_;
+	std::vector<GroupPlannerVector> planners_;
 	moveit::core::JointModelGroupPtr merged_jmg_;
 	std::list<SubTrajectory> subsolutions_;
 	std::list<InterfaceState> states_;

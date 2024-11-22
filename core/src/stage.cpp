@@ -905,14 +905,15 @@ void ConnectingPrivate::compute() {
 	if (attempts < 1)
 		throw std::runtime_error("compute_attempts must be positive");
 
+	int i = 0;
 	// TODO: workers might affect each other here with parallel executor?
-	while (!pending.empty() && attempts > 0) {
+	while (!pending.empty() && i < attempts) {
 		const StatePair& top{ pending.pop() };
 		const InterfaceState& from{ *top.first };
 		const InterfaceState& to{ *top.second };
 		assert(from.priority().enabled() && to.priority().enabled());
-		executor_->run(me->name(), [me, &from, &to] { me->compute(from, to); });
-		--attempts;
+		executor_->run(me->name(), [me, i, &from, &to] { me->compute(from, to, i); });
+		++i;
 	}
 }
 

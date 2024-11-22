@@ -98,7 +98,7 @@ struct ConnectMockup : public Connecting
 
 	using Connecting::compatible;  // make this accessible for testing
 
-	void compute(const InterfaceState& from, const InterfaceState& to) override;
+	void compute(const InterfaceState& from, const InterfaceState& to, unsigned int /*unused*/) override;
 	virtual void reset() override { runs_ = 0; };
 };
 

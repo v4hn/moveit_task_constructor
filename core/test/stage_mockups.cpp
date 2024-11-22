@@ -92,7 +92,7 @@ void MonitoringGeneratorMockup::onNewSolution(const SolutionBase& s) {
 ConnectMockup::ConnectMockup(PredefinedCosts&& costs)
   : Connecting{ "CON" + std::to_string(++id_) }, costs_{ std::move(costs) } {}
 
-void ConnectMockup::compute(const InterfaceState& from, const InterfaceState& to) {
+void ConnectMockup::compute(const InterfaceState& from, const InterfaceState& to, unsigned int /*unused*/) {
 	++runs_;
 
 	auto solution{ std::make_shared<SubTrajectory>() };

@@ -37,6 +37,7 @@
 */
 
 #include <moveit/task_constructor/solvers/cartesian_path.h>
+#include <moveit/task_constructor/stage.h>
 #include <moveit/task_constructor/utils.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/trajectory_processing/time_parameterization.h>
@@ -62,6 +63,12 @@ CartesianPath::CartesianPath() {
 }
 
 void CartesianPath::init(const core::RobotModelConstPtr& /*robot_model*/) {}
+
+PlannerInterfacePtr CartesianPath::clone() const {
+	auto clone{ std::make_unique<CartesianPath>() };
+	clone->properties().performInitFrom(Stage::MANUAL, properties());
+	return clone;
+}
 
 void CartesianPath::setIKFrame(const Eigen::Isometry3d& pose, const std::string& link) {
 	geometry_msgs::PoseStamped pose_msg;

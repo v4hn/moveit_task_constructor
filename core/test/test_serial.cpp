@@ -32,9 +32,9 @@ struct Connect : stages::Connect
 		if (enforce_sequential)
 			setProperty("merge_mode", SEQUENTIAL);
 	}
-	void compute(const InterfaceState& from, const InterfaceState& to) override {
+	void compute(const InterfaceState& from, const InterfaceState& to, unsigned int /*unused*/) override {
 		++calls_;
-		stages::Connect::compute(from, to);
+		stages::Connect::compute(from, to, 0);
 	}
 };
 

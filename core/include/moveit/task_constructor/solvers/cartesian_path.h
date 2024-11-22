@@ -53,6 +53,8 @@ class CartesianPath : public PlannerInterface
 public:
 	CartesianPath();
 
+	PlannerInterfacePtr clone() const override;
+
 	void setIKFrame(const geometry_msgs::PoseStamped& pose) { setProperty("ik_frame", pose); }
 	void setIKFrame(const Eigen::Isometry3d& pose, const std::string& link);
 	void setIKFrame(const std::string& link) { setIKFrame(Eigen::Isometry3d::Identity(), link); }

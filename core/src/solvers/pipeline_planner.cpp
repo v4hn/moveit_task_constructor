@@ -96,7 +96,7 @@ planning_pipeline::PlanningPipelinePtr PipelinePlanner::create(const PipelinePla
 		planner = std::make_shared<planning_pipeline::PlanningPipeline>(spec.model, ros::NodeHandle(pipeline_ns),
 		                                                                PLUGIN_PARAMETER_NAME, spec.adapter_param);
 		// store in cache
-		//entry = planner;
+		// entry = planner;
 	}
 	return planner;
 }
@@ -120,8 +120,16 @@ PipelinePlanner::PipelinePlanner(const std::string& pipeline_name) : pipeline_na
 	                    planning_pipeline::PlanningPipeline::MOTION_PLAN_REQUEST_TOPIC);
 }
 
-PipelinePlanner::PipelinePlanner(const planning_pipeline::PlanningPipelinePtr& planning_pipeline) : PipelinePlanner() {
+PipelinePlanner::PipelinePlanner(const planning_pipeline::PlanningPipelinePtr&& planning_pipeline) : PipelinePlanner() {
 	planner_ = planning_pipeline;
+}
+
+PlannerInterfacePtr PipelinePlanner::clone() const {
+	auto clone{ std::make_shared<PipelinePlanner>(pipeline_name_) };
+	if (planner_)
+		clone->init(planner_->getRobotModel());
+	clone->properties().performInitFrom(Stage::MANUAL, properties());
+	return clone;
 }
 
 void PipelinePlanner::init(const core::RobotModelConstPtr& robot_model) {

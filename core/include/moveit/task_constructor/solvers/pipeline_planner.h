@@ -74,7 +74,9 @@ public:
 
 	PipelinePlanner(const std::string& pipeline = "ompl");
 
-	PipelinePlanner(const planning_pipeline::PlanningPipelinePtr& planning_pipeline);
+	PipelinePlanner(const planning_pipeline::PlanningPipelinePtr&& planning_pipeline);
+
+	PlannerInterfacePtr clone() const override;
 
 	void setPlannerId(const std::string& planner) { setProperty("planner", planner); }
 

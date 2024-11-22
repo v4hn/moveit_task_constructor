@@ -420,7 +420,7 @@ public:
 
 	void reset() override;
 
-	virtual void compute(const InterfaceState& from, const InterfaceState& to) = 0;
+	virtual void compute(const InterfaceState& from, const InterfaceState& to, unsigned int attempt) = 0;
 
 protected:
 	virtual bool compatible(const InterfaceState& from_state, const InterfaceState& to_state) const;

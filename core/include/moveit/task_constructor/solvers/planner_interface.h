@@ -82,6 +82,8 @@ public:
 	PlannerInterface();
 	virtual ~PlannerInterface() {}
 
+	virtual PlannerInterfacePtr clone() const = 0;
+
 	PropertyMap& properties() { return properties_; }
 	const PropertyMap& properties() const { return properties_; }
 
