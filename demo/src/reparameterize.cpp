@@ -29,7 +29,7 @@
  *********************************************************************/
 
 /* Author: Michael Goerner
-   Desc:   Wrap multiple Cartesian motions with a reparametrization SerialContainer
+   Desc:   Wrap multiple Cartesian motions with a reparametrization wrapper
 */
 
 #include <moveit/task_constructor/task.h>
@@ -38,6 +38,7 @@
 #include <moveit/task_constructor/solvers/cartesian_path.h>
 #include <moveit/task_constructor/stages/move_relative.h>
 #include <moveit/task_constructor/container.h>
+#include <moveit/task_constructor/cost_terms.h>
 
 #include <moveit_msgs/DisplayTrajectory.h>
 
@@ -50,9 +51,6 @@
 using namespace moveit::task_constructor;
 
 void extractTrajectory(const SolutionBase& solution, robot_trajectory::RobotTrajectoryPtr& t) {
-	// if(t->getWayPointCount() == 0) {
-	// 	t->addSuffixWayPoint(solution.start()->scene()->getCurrentState(), 0.0);
-	// }
 	if (auto* sub = dynamic_cast<SubTrajectory const*>(&solution)) {
 		if (sub->trajectory())
 			t->append(*sub->trajectory(), 0.0);
@@ -66,18 +64,24 @@ void extractTrajectory(const SolutionBase& solution, robot_trajectory::RobotTraj
 	}
 }
 
-class SmoothSerialWrapper : public WrapperBase
+class ReparameterizeWrapper : public WrapperBase
 {
 public:
-	SmoothSerialWrapper(const std::string& name) : WrapperBase(name) {}
+	ReparameterizeWrapper(const std::string& name, trajectory_processing::TimeParameterizationPtr reparameterize)
+	  : WrapperBase{ name }, reparameterize_{ reparameterize } {
+		properties().declare("publish_original", false, "republish original solution together with reparameterized one");
+	}
 
 	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
 		robot_model_ = robot_model;
 		WrapperBase::init(robot_model);
 	}
 
+	void setPublishOriginal(bool flag) { setProperty("publish_original", flag); }
+
 	void onNewSolution(const SolutionBase& s) override {
-		liftSolution(s);  // testing
+		if (properties().get<bool>("publish_original"))
+			liftSolution(s, s.cost(), "unchanged ");
 
 		// concatenate trajectories from subsolutions
 		auto trajectory = std::make_shared<robot_trajectory::RobotTrajectory>(robot_model_);
@@ -85,8 +89,7 @@ public:
 		trajectory->setGroupName("panda_arm");
 
 		{
-			trajectory_processing::TimeOptimalTrajectoryGeneration time_param{ 0.1, 0.1, 0.3 };
-			if (!time_param.computeTimeStamps(*trajectory))
+			if (!reparameterize_->computeTimeStamps(*trajectory))
 				throw std::runtime_error("time reparametrization failed");
 
 			SubTrajectory sub_trajectory{ trajectory };
@@ -98,50 +101,56 @@ public:
 
 private:
 	robot_model::RobotModelConstPtr robot_model_;
+	trajectory_processing::TimeParameterizationPtr reparameterize_;
 };
 
 Task createTask() {
 	Task t;
-	t.stages()->setName("Smooth Motions");
+	t.stages()->setName("Smooth");
 
 	auto cartesian = std::make_shared<solvers::CartesianPath>();
+	cartesian->setStepSize(0.05);
 
 	auto c = std::make_unique<SerialContainer>("sequence");
 	c->properties().set("group", "panda_arm");
+	c->properties().set("tool", [] {
+		geometry_msgs::PoseStamped f;
+		f.header.frame_id = "panda_hand";
+		f.pose.orientation.w = 1.0;
+		f.pose.position.z = 0.1;
+		return f;
+	}());
 
 	c->add(std::make_unique<stages::CurrentState>("current"));
 
-	{
+	auto segment = [&](double y, double z, double r) {
 		auto stage = std::make_unique<stages::MoveRelative>("x +0.2", cartesian);
 		stage->properties().configureInitFrom(Stage::PARENT, { "group" });
-		geometry_msgs::Vector3Stamped direction;
+		stage->properties().property("ik_frame").configureInitFrom(Stage::PARENT, "tool");
+		geometry_msgs::TwistStamped direction;
 		direction.header.frame_id = "world";
-		direction.vector.x = 0.2;
+		direction.twist.linear.x = 0.0;
+		direction.twist.linear.y = y;
+		direction.twist.linear.z = z;
+		direction.twist.angular.x = r;
 		stage->setDirection(direction);
-
 		c->add(std::move(stage));
-	}
-	{
-		auto stage = std::make_unique<stages::MoveRelative>("rz +45°", cartesian);
-		stage->properties().configureInitFrom(Stage::PARENT, { "group" });
-		stage->setIKFrame([]() {
-			geometry_msgs::PoseStamped f;
-			f.header.frame_id = "panda_hand";
-			f.pose.orientation.w = 1.0;
-			f.pose.position.z = 0.1;
-			return f;
-		}());
-		geometry_msgs::TwistStamped twist;
-		twist.header.frame_id = "world";
-		twist.twist.angular.x = -M_TAU / 8.;
-		twist.twist.angular.y = -M_TAU / 8.;
-		stage->setDirection(twist);
-		c->add(std::move(stage));
-	}
+	};
 
-	// t.add(std::move(c));
-	auto wrapper = std::make_unique<SmoothSerialWrapper>("smooth");
+	segment(0.03, 0.2, M_TAU / 6);
+	segment(0.05, -0.1, M_TAU / 6);
+	segment(0.05, 0.1, -M_TAU / 6);
+	segment(0.03, -0.2, -M_TAU / 6);
+
+	auto tp = std::make_shared<trajectory_processing::TimeOptimalTrajectoryGeneration>(
+	    /* path tolerance */ 0.5,
+	    /* dt */ 0.1,
+	    /* min angle change */ 0.001);
+	auto wrapper = std::make_unique<ReparameterizeWrapper>("smooth", tp);
+	wrapper->setCostTerm(std::make_shared<cost::TrajectoryDuration>());
+	wrapper->setPublishOriginal(true);
 	wrapper->add(std::move(c));
+
 	t.add(std::move(wrapper));
 
 	return t;
@@ -161,6 +170,12 @@ int main(int argc, char** argv) {
 	}
 
 	ROS_INFO("done");
+
+	if (task.solutions().empty()) {
+		ROS_INFO("no solutions found");
+		ros::waitForShutdown();
+		return 1;
+	}
 
 	ros::Publisher display_path_publisher =
 	    ros::NodeHandle().advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
