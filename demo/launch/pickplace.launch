@@ -5,9 +5,10 @@
   <arg name="workers" default="-1" />
   <arg name="connect_parallel_attempts" default="1" />
   <arg name="keep_running" default="true" />
+  <arg name="name" />
 
   <!-- Run MTC pick and place -->
-  <node name="mtc_tutorial" pkg="moveit_task_constructor_demo" type="pick_place_demo" output="screen">
+  <node name="$(arg name)" pkg="moveit_task_constructor_demo" type="pick_place_demo" output="screen">
     <param name="execute" value="$(arg execute)" />
     <rosparam command="load" file="$(find moveit_task_constructor_demo)/config/panda_config.yaml" />
     <param name="max_solutions" value="$(arg max_solutions)" />
