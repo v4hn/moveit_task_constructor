@@ -40,6 +40,7 @@
 #include <moveit/task_constructor/solvers/cartesian_path.h>
 #include <moveit/task_constructor/solvers/pipeline_planner.h>
 #include <moveit/task_constructor/solvers/joint_interpolation.h>
+#include <moveit/task_constructor/cost_terms.h>
 
 namespace moveit_task_constructor_demo {
 
@@ -516,6 +517,8 @@ bool PickPlaceTask::init() {
 		stage->restrictDirection(stages::MoveTo::FORWARD);
 		t.add(std::move(stage));
 	}
+
+	t.stages()->setCostTerm(std::make_shared<cost::TrajectoryDuration>());
 
 	// prepare Task structure for planning
 	try {
