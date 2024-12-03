@@ -81,6 +81,8 @@ public:
 	void addObject(const moveit_msgs::CollisionObject& collision_object);
 	/// Remove an object from the planning scene
 	void removeObject(const std::string& object_name);
+	/// Remove an object, possibly adding it backwards during inference
+	void removeObject(const moveit_msgs::CollisionObject& collision_object);
 	/// Move an object from the planning scene
 	void moveObject(const moveit_msgs::CollisionObject& collision_object);
 

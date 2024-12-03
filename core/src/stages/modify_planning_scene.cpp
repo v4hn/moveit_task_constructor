@@ -43,6 +43,8 @@
 
 #include <moveit/planning_scene/planning_scene.h>
 
+#include <moveit/utils/message_checks.h>
+
 namespace moveit {
 namespace task_constructor {
 namespace stages {
@@ -72,6 +74,16 @@ void ModifyPlanningScene::removeObject(const std::string& object_name) {
 	obj.id = object_name;
 	obj.operation = moveit_msgs::CollisionObject::REMOVE;
 	collision_objects_.push_back(obj);
+}
+
+void ModifyPlanningScene::removeObject(const moveit_msgs::CollisionObject& collision_object) {
+	if (collision_object.operation != moveit_msgs::CollisionObject::REMOVE) {
+		ROS_ERROR_STREAM_NAMED("ModifyPlanningScene", fmt::format("{}: removeObject is called with object's operation "
+		                                                          "not set to REMOVE -- ignoring the object",
+		                                                          name()));
+		return;
+	}
+	collision_objects_.push_back(collision_object);
 }
 
 void ModifyPlanningScene::moveObject(const moveit_msgs::CollisionObject& collision_object) {
@@ -173,19 +185,21 @@ std::pair<InterfaceState, SubTrajectory> ModifyPlanningScene::apply(const Interf
 void ModifyPlanningScene::processCollisionObject(planning_scene::PlanningScene& scene,
                                                  const moveit_msgs::CollisionObject& object, bool invert) {
 	const auto op = object.operation;
+	auto _object = object;
 	if (invert) {
 		if (op == moveit_msgs::CollisionObject::ADD)
 			// (temporarily) change operation to REMOVE to revert adding the object
-			const_cast<moveit_msgs::CollisionObject&>(object).operation = moveit_msgs::CollisionObject::REMOVE;
-		else if (op == moveit_msgs::CollisionObject::REMOVE)
-			throw std::runtime_error("cannot apply removeObject() backwards");
-		else if (op == moveit_msgs::CollisionObject::MOVE)
+			_object.operation = moveit_msgs::CollisionObject::REMOVE;
+		else if (op == moveit_msgs::CollisionObject::REMOVE) {
+			if (moveit::core::isEmpty(object.pose))  // TODO: shape is required as well
+				throw std::runtime_error("to apply removeObject() backwards, you must specify the full object");
+			else
+				_object.operation = moveit_msgs::CollisionObject::ADD;
+		} else if (op == moveit_msgs::CollisionObject::MOVE)
 			throw std::runtime_error("cannot apply moveObject() backwards");
 	}
 
-	scene.processCollisionObjectMsg(object);
-	// restore previous operation (for next call)
-	const_cast<moveit_msgs::CollisionObject&>(object).operation = op;
+	scene.processCollisionObjectMsg(_object);
 }
 }  // namespace stages
 }  // namespace task_constructor

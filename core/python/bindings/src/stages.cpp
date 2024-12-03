@@ -117,7 +117,7 @@ void export_stages(pybind11::module& m) {
 			.. _CollisionObject: https://docs.ros.org/en/noetic/api/moveit_msgs/html/msg/CollisionObject.html
 
 		)", "collision_object"_a)
-		.def("removeObject", &ModifyPlanningScene::removeObject,
+		.def("removeObject", py::overload_cast<const std::string&>(&ModifyPlanningScene::removeObject),
 			"Remove a CollisionObject_ from the planning scene", "name"_a)
 		;
 
