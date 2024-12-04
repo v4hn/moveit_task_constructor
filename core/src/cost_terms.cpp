@@ -320,7 +320,7 @@ double Clearance::operator()(const SubTrajectory& s, std::string& comment) const
 			distance += distance_data.distance;
 		}
 		distance /= s.trajectory()->getWayPointCount();
-		comment = fmt::format(PREFIX + "average{} distance: {}", (cumulative ? " cumulative" : ""), distance);
+		comment = fmt::format(PREFIX + "average{} distance: {:.3f}", (cumulative ? " cumulative" : ""), distance);
 	}
 
 	return distance_to_cost(distance);
