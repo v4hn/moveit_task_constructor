@@ -344,9 +344,23 @@ void ComputeIK::compute() {
 		SubTrajectory solution;
 		std::copy(frame_markers.begin(), frame_markers.end(), std::back_inserter(solution.markers()));
 		generateCollisionMarkers(sandbox_state, appender, links_to_visualize);
+		int marker_id = 0;
+		for (auto& contact : collisions.contacts) {
+			for (auto& p : contact.second) {
+				visualization_msgs::Marker marker;
+				rviz_marker_tools::makeSphere(marker, 0.01);
+				marker.id = marker_id++;
+				marker.header.frame_id = scene->getPlanningFrame();
+				marker.pose.position.x = p.pos.x();
+				marker.pose.position.y = p.pos.y();
+				marker.pose.position.z = p.pos.z();
+				marker.ns = "eef collision point";
+				rviz_marker_tools::setColor(marker.color, rviz_marker_tools::Color::RED, 1.0);
+				eef_markers.push_back(marker);
+			}
+		}
 		std::copy(eef_markers.begin(), eef_markers.end(), std::back_inserter(solution.markers()));
 		solution.markAsFailure();
-		// TODO: visualize collisions
 		solution.setComment(s.comment() + " eef in collision: " + listCollisionPairs(collisions.contacts, ", "));
 		auto colliding_scene{ scene->diff() };
 		colliding_scene->setCurrentState(sandbox_state);
