@@ -224,7 +224,7 @@ void SolutionBase::fillInfo(moveit_task_constructor_msgs::SolutionInfo& info, In
 	info.cost = this->cost();
 	info.comment = this->comment();
 	const Introspection* ci = introspection;
-	info.stage_id = ci ? ci->stageId(this->creator()) : 0;
+	info.stage_id = (ci && this->creator()) ? ci->stageId(this->creator()) : 0;
 
 	const auto& markers = this->markers();
 	info.markers.resize(markers.size());
@@ -236,7 +236,9 @@ void SubTrajectory::appendTo(moveit_task_constructor_msgs::Solution& msg, Intros
 	moveit_task_constructor_msgs::SubTrajectory& t = msg.sub_trajectory.back();
 	SolutionBase::fillInfo(t.info, introspection);
 
-	t.execution_info = creator()->trajectoryExecutionInfo();
+	if (creator()) {
+		t.execution_info = creator()->trajectoryExecutionInfo();
+	}
 
 	if (trajectory())
 		trajectory()->getRobotTrajectoryMsg(t.trajectory);

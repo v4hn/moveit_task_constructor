@@ -136,6 +136,7 @@ protected:
 	/// spawn a new solution with given state as start and end
 	void spawn(InterfaceState&& state, SubTrajectory&& trajectory);
 	void spawn(InterfaceState&& from, InterfaceState&& to, SubTrajectory&& trajectory);
+	void spawn(InterfaceState&& from, InterfaceState&& to, SolutionBasePtr&& solution);
 	/// propagate a solution forwards
 	void sendForward(const InterfaceState& from, InterfaceState&& to, SubTrajectory&& trajectory);
 	/// propagate a solution backwards

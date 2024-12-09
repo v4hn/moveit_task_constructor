@@ -46,63 +46,11 @@
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/trajectory_processing/time_optimal_trajectory_generation.h>
 
+#include "reparameterize_wrapper.h"
+
 #define M_TAU (2. * M_PI)
 
 using namespace moveit::task_constructor;
-
-void extractTrajectory(const SolutionBase& solution, robot_trajectory::RobotTrajectoryPtr& t) {
-	if (auto* sub = dynamic_cast<SubTrajectory const*>(&solution)) {
-		if (sub->trajectory())
-			t->append(*sub->trajectory(), 0.0);
-	} else if (auto* sub = dynamic_cast<SolutionSequence const*>(&solution)) {
-		for (const auto& s : sub->solutions())
-			extractTrajectory(*s, t);
-	} else if (auto* sub = dynamic_cast<WrappedSolution const*>(&solution)) {
-		extractTrajectory(*sub->wrapped(), t);
-	} else {
-		throw std::runtime_error("encountered unknown solution type");
-	}
-}
-
-class ReparameterizeWrapper : public WrapperBase
-{
-public:
-	ReparameterizeWrapper(const std::string& name, trajectory_processing::TimeParameterizationPtr reparameterize)
-	  : WrapperBase{ name }, reparameterize_{ reparameterize } {
-		properties().declare("publish_original", false, "republish original solution together with reparameterized one");
-	}
-
-	void init(const moveit::core::RobotModelConstPtr& robot_model) override {
-		robot_model_ = robot_model;
-		WrapperBase::init(robot_model);
-	}
-
-	void setPublishOriginal(bool flag) { setProperty("publish_original", flag); }
-
-	void onNewSolution(const SolutionBase& s) override {
-		if (properties().get<bool>("publish_original"))
-			liftSolution(s, s.cost(), "unchanged ");
-
-		// concatenate trajectories from subsolutions
-		auto trajectory = std::make_shared<robot_trajectory::RobotTrajectory>(robot_model_);
-		extractTrajectory(s, trajectory);
-		trajectory->setGroupName("panda_arm");
-
-		{
-			if (!reparameterize_->computeTimeStamps(*trajectory))
-				throw std::runtime_error("time reparametrization failed");
-
-			SubTrajectory sub_trajectory{ trajectory };
-			sub_trajectory.setComment("smoother");
-			sub_trajectory.setCost(s.cost());
-			spawn(InterfaceState{ *s.start() }, InterfaceState{ *s.end() }, std::move(sub_trajectory));
-		}
-	}
-
-private:
-	robot_model::RobotModelConstPtr robot_model_;
-	trajectory_processing::TimeParameterizationPtr reparameterize_;
-};
 
 Task createTask() {
 	Task t;
@@ -149,6 +97,7 @@ Task createTask() {
 	auto wrapper = std::make_unique<ReparameterizeWrapper>("smooth", tp);
 	wrapper->setCostTerm(std::make_shared<cost::TrajectoryDuration>());
 	wrapper->setPublishOriginal(true);
+	wrapper->setGroup("panda_arm");
 	wrapper->add(std::move(c));
 
 	t.add(std::move(wrapper));
