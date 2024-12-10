@@ -42,14 +42,16 @@ public:
 		std::vector<const moveit::task_constructor::SolutionBase*> merged_seq;
 		auto it = seq.cbegin();
 		while (it != seq.cend()) {
-			auto e{ std::find_if(it, seq.cend(), [](auto& s) -> bool { return !s->trajectory(); }) };
+			auto e{ std::find_if(it, seq.cend(), [&](auto& s) -> bool {
+				return !s->trajectory() || s->trajectory()->getGroup() != (*it)->trajectory()->getGroup();
+			}) };
 			if (it == e) {
 				merged_seq.push_back(*it);
 				it = std::next(e);
 			} else {
-				// [it,end) should be merged into a new trajectory
+				// [it,end) can be merged into a new trajectory
 				auto t = std::make_shared<robot_trajectory::RobotTrajectory>(solution.start()->scene()->getRobotModel());
-				t->setGroupName(properties().get<std::string>("group"));
+				t->setGroupName((*it)->trajectory()->getGroupName());
 
 				double cost = 0.0;
 				for (auto i = it; i != e; ++i) {
@@ -64,6 +66,10 @@ public:
 				s.setStartState(*(*it)->start());
 				s.setEndState(*(*std::prev(e))->end());
 				s.setCost(cost);
+				for (auto i = it; i != e; ++i) {
+					for (const auto& marker : (*i)->markers())
+						s.markers().push_back(marker);
+				}
 
 				merged_solutions.push_back(std::move(s));
 				merged_seq.push_back(&merged_solutions.back());

@@ -71,29 +71,33 @@ Task createTask() {
 
 	c->add(std::make_unique<stages::CurrentState>("current"));
 
-	auto segment = [&](double y, double z, double r) {
+	auto segment = [&](Eigen::Vector3d const& motion_vector, double r) {
 		auto stage = std::make_unique<stages::MoveRelative>("x +0.2", cartesian);
 		stage->properties().configureInitFrom(Stage::PARENT, { "group" });
 		stage->properties().property("ik_frame").configureInitFrom(Stage::PARENT, "tool");
 		geometry_msgs::TwistStamped direction;
 		direction.header.frame_id = "world";
-		direction.twist.linear.x = 0.0;
-		direction.twist.linear.y = y;
-		direction.twist.linear.z = z;
+		direction.twist.linear.x = motion_vector.x();
+		direction.twist.linear.y = motion_vector.y();
+		direction.twist.linear.z = motion_vector.z();
 		direction.twist.angular.x = r;
 		stage->setDirection(direction);
 		c->add(std::move(stage));
 	};
 
-	segment(0.03, 0.2, M_TAU / 6);
-	segment(0.05, -0.1, M_TAU / 6);
-	segment(0.05, 0.1, -M_TAU / 6);
-	segment(0.03, -0.2, -M_TAU / 6);
+	segment({ 0.0, 0.12, 0.0 }, 0);
+	segment({ 0.0, 0.09, 0.0 }, 0);
+	segment({ 0.0, 0.06, 0.0 }, 0);
+	segment({ 0.0, 0.03, 0.0 }, 0);
+	segment({ 0.15, 0.0, 0.0 }, 0);
 
+	segment({ 0.0, -0.3, 0.0 }, 0);
+
+	ros::NodeHandle nh{ "~" };
 	auto tp = std::make_shared<trajectory_processing::TimeOptimalTrajectoryGeneration>(
-	    /* path tolerance */ 0.5,
-	    /* dt */ 0.1,
-	    /* min angle change */ 0.001);
+	    /* path tolerance */ nh.param("pt", 0.02),
+	    /* dt */ nh.param("dt", 0.02),
+	    /* min angle change */ nh.param("mc", 0.15));
 	auto wrapper = std::make_unique<ReparameterizeWrapper>("smooth", tp);
 	wrapper->setCostTerm(std::make_shared<cost::TrajectoryDuration>());
 	wrapper->setPublishOriginal(true);
@@ -126,6 +130,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	task.introspection().publishSolution(*task.solutions().front());
 	ros::Publisher display_path_publisher =
 	    ros::NodeHandle().advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
 	std::array<moveit_msgs::DisplayTrajectory, 2> d;
