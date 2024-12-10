@@ -160,9 +160,9 @@ private:
 	static const char* STATUS_COLOR_[];
 	planning_scene::PlanningSceneConstPtr scene_;
 	PropertyMap properties_;
-	/// trajectories which are *timewise before* this state
+	/// trajectories which are *temporally before* this state
 	Solutions incoming_trajectories_;
-	/// trajectories which are *timewise after* this state
+	/// trajectories which are *temporally after* this state
 	Solutions outgoing_trajectories_;
 
 	// members needed for priority scheduling in Interface list
@@ -176,7 +176,7 @@ class Interface : public ordered<InterfaceState*>
 	using base_type = ordered<InterfaceState*>;
 
 public:
-	// iterators providing convinient access to stored InterfaceState
+	// iterators providing convenience access to stored InterfaceState
 	class iterator : public base_type::iterator
 	{
 	public:
