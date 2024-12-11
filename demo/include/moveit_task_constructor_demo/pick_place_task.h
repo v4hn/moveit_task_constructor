@@ -78,6 +78,8 @@ public:
 
 	bool execute();
 
+	moveit::task_constructor::Task const& task() { return *task_; }
+
 private:
 	void loadParameters();
 

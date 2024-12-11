@@ -41,6 +41,11 @@
 #include <moveit/task_constructor/solvers/pipeline_planner.h>
 #include <moveit/task_constructor/solvers/joint_interpolation.h>
 #include <moveit/task_constructor/cost_terms.h>
+#include <moveit/trajectory_processing/time_optimal_trajectory_generation.h>
+
+#include "reparameterize_wrapper.h"
+
+#define M_TAU (2. * M_PI)
 
 namespace moveit_task_constructor_demo {
 
@@ -167,12 +172,12 @@ bool PickPlaceTask::init() {
 	// Reset ROS introspection before constructing the new object
 	// TODO(v4hn): global storage for Introspection services to enable one-liner
 	task_.reset();
-	task_.reset(new moveit::task_constructor::Task("", /*introspection*/ false));
+	task_.reset(new moveit::task_constructor::Task);  //"", /*introspection*/ false));
 
 	if (workers_ >= 0)
 		task_->setParallelExecutor(workers_);
 
-	int max_solutions = pnh_.param<int>("max_solutions", 10);
+	int max_solutions = pnh_.param<int>("max_solutions", 1);
 	task_->setMaxSolutions(static_cast<size_t>(max_solutions));
 
 	// Individual movement stages are collected within the Task object
@@ -204,6 +209,8 @@ bool PickPlaceTask::init() {
 	t.setProperty("hand_grasping_frame", hand_frame_);
 	t.setProperty("ik_frame", hand_frame_);
 
+	auto c = std::make_unique<SerialContainer>("pick and place");
+
 	/****************************************************
 	 *                                                  *
 	 *               Current State                      *
@@ -222,7 +229,7 @@ bool PickPlaceTask::init() {
 			}
 			return true;
 		});
-		t.add(std::move(applicability_filter));
+		c->add(std::move(applicability_filter));
 	}
 
 	/****************************************************
@@ -236,7 +243,7 @@ bool PickPlaceTask::init() {
 		stage->setGroup(hand_group_name_);
 		stage->setGoal(hand_open_pose_);
 		initial_state_ptr = stage.get();  // remember start state for monitoring grasp pose generator
-		t.add(std::move(stage));
+		c->add(std::move(stage));
 	}
 
 	/****************************************************
@@ -251,7 +258,7 @@ bool PickPlaceTask::init() {
 		stage->setTimeout(5.0);
 		stage->setComputeAttempts(connect_compute_attempts_);
 		stage->properties().configureInitFrom(Stage::PARENT);
-		t.add(std::move(stage));
+		c->add(std::move(stage));
 	}
 
 	/****************************************************
@@ -295,7 +302,9 @@ bool PickPlaceTask::init() {
 			stage->properties().set("marker_ns", "grasp_pose");
 			stage->setPreGraspPose(hand_open_pose_);
 			stage->setObject(object);  // object to sample grasps for
-			stage->setAngleDelta(M_PI / 12);
+			stage->setAngleDelta(M_TAU);
+			stage->setAngleOffset(-M_TAU / 8);
+			// stage->setAngleDelta(M_TAU/24);
 			stage->setMonitoredStage(initial_state_ptr);  // hook into successful initial-phase solutions
 
 			// Compute IK for sampled grasp poses
@@ -372,6 +381,9 @@ bool PickPlaceTask::init() {
 		 ***************************************************/
 		{
 			auto stage = std::make_unique<stages::ModifyPlanningScene>("forbid collision (object,support)");
+			stage->properties().declare<bool>(
+			    "ignore_for_reparameterization", true,
+			    "if true, solutions from this stage will be ignored during path reparameterization");
 			stage->allowCollisions({ object }, support_surfaces_, false);
 			grasp->insert(std::move(stage));
 		}
@@ -379,7 +391,7 @@ bool PickPlaceTask::init() {
 		pick_stage_ptr = grasp.get();  // remember for monitoring place pose generator
 
 		// Add grasp container to task
-		t.add(std::move(grasp));
+		c->add(std::move(grasp));
 	}
 
 	/******************************************************
@@ -394,7 +406,7 @@ bool PickPlaceTask::init() {
 		stage->setComputeAttempts(connect_compute_attempts_);
 		stage->setTimeout(5.0);
 		stage->properties().configureInitFrom(Stage::PARENT);
-		t.add(std::move(stage));
+		c->add(std::move(stage));
 	}
 
 	/******************************************************
@@ -446,7 +458,7 @@ bool PickPlaceTask::init() {
 
 			// Compute IK
 			auto wrapper = std::make_unique<stages::ComputeIK>("place pose IK", std::move(stage));
-			wrapper->setMaxIKSolutions(2);
+			wrapper->setMaxIKSolutions(1);
 			wrapper->setIKFrame(grasp_frame_transform_, hand_frame_);
 			wrapper->properties().configureInitFrom(Stage::PARENT, { "eef", "group" });
 			wrapper->properties().configureInitFrom(Stage::INTERFACE, { "target_pose" });
@@ -500,7 +512,7 @@ bool PickPlaceTask::init() {
 		}
 
 		// Add place container to task
-		t.add(std::move(place));
+		c->add(std::move(place));
 	}
 
 	/******************************************************
@@ -513,8 +525,24 @@ bool PickPlaceTask::init() {
 		stage->properties().configureInitFrom(Stage::PARENT, { "group" });
 		stage->setGoal(arm_home_pose_);
 		stage->restrictDirection(stages::MoveTo::FORWARD);
-		t.add(std::move(stage));
+		c->add(std::move(stage));
 	}
+
+	ros::NodeHandle nh{ "~" };
+	auto tp = std::make_shared<trajectory_processing::TimeOptimalTrajectoryGeneration>(
+	    /* path tolerance */ nh.param("pt", 0.5),
+	    /* dt */ nh.param("dt", 0.05),
+	    /* min angle change */ nh.param("mc", 0.2));
+	auto wrapper = std::make_unique<ReparameterizeWrapper>("smooth", tp);
+	wrapper->setPublishOriginal(true);
+	wrapper->setCostTerm(std::make_shared<cost::TrajectoryDuration>());
+	wrapper->setPublishOriginal(true);
+	wrapper->add(std::move(c));
+
+	// auto wrapper = std::make_unique<SerialContainer>("smooth");
+	// wrapper->add(std::move(c));
+
+	t.add(std::move(wrapper));
 
 	t.stages()->setCostTerm(std::make_shared<cost::TrajectoryDuration>());
 

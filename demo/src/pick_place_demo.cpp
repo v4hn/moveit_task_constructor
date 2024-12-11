@@ -40,6 +40,8 @@
 // MTC pick/place demo implementation
 #include <moveit_task_constructor_demo/pick_place_task.h>
 
+#include <moveit_msgs/DisplayTrajectory.h>
+
 constexpr char LOGNAME[] = "moveit_task_constructor_demo";
 
 int main(int argc, char** argv) {
@@ -71,8 +73,67 @@ int main(int argc, char** argv) {
 		ROS_INFO_NAMED(LOGNAME, "Planning failed");
 	}
 
+	ros::Publisher display_path_publisher =
+	    ros::NodeHandle().advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
+	std::array<moveit_msgs::DisplayTrajectory, 2> d;
+	auto& model = pick_place_task.task().getRobotModel();
+
+	if (!pick_place_task.task().solutions().empty()) {
+		ROS_INFO("extracting trajectories");
+		for (size_t i = 0; i < 2; ++i) {
+			d[i].model_id = model->getName();
+			moveit::task_constructor::SolutionBaseConstPtr s{ *std::next(pick_place_task.task().solutions().begin(), i) };
+			moveit_task_constructor_msgs::Solution solution_msg;
+			s->appendTo(solution_msg);
+			d[i].trajectory_start = solution_msg.start_scene.robot_state;
+			// append all parts to trajectory
+			ROS_INFO_STREAM("has " << solution_msg.sub_trajectory.size() << " sub trajectories");
+			// we need a single element in d[i].trajectory, so we have to concatenate all sub trajectories
+			robot_trajectory::RobotTrajectoryPtr t{ new robot_trajectory::RobotTrajectory(model) };
+			t->setGroupName("panda_arm_hand");
+			for (const auto& sub_trajectory : solution_msg.sub_trajectory) {
+				auto& state{ (t->getWayPointCount() > 0) ? t->getLastWayPoint() : s->start()->scene()->getCurrentState() };
+				robot_trajectory::RobotTrajectory rt{ model, "panda_arm_hand" };
+				rt.setRobotTrajectoryMsg(state, sub_trajectory.trajectory);
+				t->append(rt, 0.0);
+			}
+			d[i].trajectory.emplace_back();
+			t->getRobotTrajectoryMsg(d[i].trajectory.back());
+		}
+
+		for (auto& display_trajectory : d) {
+			for (auto& trajectory : display_trajectory.trajectory) {
+				// Scale finger joint positions and velocities for visiblity
+				int index = -1;
+				for (size_t i = 0; i < trajectory.joint_trajectory.joint_names.size(); i++) {
+					if (trajectory.joint_trajectory.joint_names[i] == "panda_finger_joint1") {
+						index = i;
+						break;
+					}
+				}
+				if (index == -1) {
+					ROS_ERROR_STREAM("Could not find panda_finger_joint1 in joint_names");
+					return 1;
+				}
+
+				for (auto& joint_trajectory_point : trajectory.joint_trajectory.points) {
+					joint_trajectory_point.positions[index] *= 15;
+					joint_trajectory_point.velocities[index] *= 15;
+				}
+			}
+		}
+
+		ros::Rate r{ 0.5 };
+		int i = 0;
+		while (ros::ok()) {
+			display_path_publisher.publish(d[i]);
+			i = (i + 1) % 2;
+			r.sleep();
+		}
+	}
+
 	// If wanted, keep introspection alive
-	if (pnh.param("keep_running", true)){
+	if (pnh.param("keep_running", true)) {
 		pick_place_task.introspection();
 		ros::waitForShutdown();
 	}
