@@ -38,7 +38,7 @@ public:
 		if (properties().get<bool>("publish_original"))
 			liftSolution(solution, solution.cost(), "unchanged ");
 
-		std::vector<const moveit::task_constructor::SubTrajectory*> seq;
+		std::vector<moveit::task_constructor::SubTrajectory const*> seq;
 		flattenSolution(solution, seq);
 
 		new_states.emplace_back(*solution.start());
@@ -53,8 +53,9 @@ public:
 			moveit::task_constructor::SubTrajectory s{};
 			s.setStartState((it == seq.cbegin()) ? start : *last);
 
-			auto e{ std::find_if(it, seq.cend(), [&](auto& s) -> bool {
-				return !s->trajectory() || s->trajectory()->getGroup() != (*it)->trajectory()->getGroup();
+			auto e{ std::find_if(it, seq.cend(), [&](moveit::task_constructor::SubTrajectory const* s) -> bool {
+				return !s->creator()->properties().hasProperty("ignore_for_reparameterization") &&
+				       (!s->trajectory() || s->trajectory()->getGroup() != (*it)->trajectory()->getGroup());
 			}) };
 
 			if ((*it)->trajectory() && std::next(it) != e) {
@@ -64,8 +65,10 @@ public:
 
 				double cost = 0.0;
 				for (auto i = it; i != e; ++i) {
-					t->append(*(*i)->trajectory(), 0.0);
 					cost += (*i)->cost();
+					if (!(*i)->trajectory())
+						continue;
+					t->append(*(*i)->trajectory(), 0.0);
 				}
 				s.setCost(cost);
 
