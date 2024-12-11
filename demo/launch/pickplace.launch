@@ -3,9 +3,9 @@
   <arg name="execute" default="true" />
   <arg name="max_solutions" default="10" />
   <arg name="workers" default="-1" />
-  <arg name="connect_parallel_attempts" default="1" />
+  <arg name="connect_parallel_attempts" default="$(eval arg('workers') if arg('workers') > 0 else 1)" />
   <arg name="keep_running" default="true" />
-  <arg name="name" />
+  <arg name="name" default="mtc_tutorial" />
 
   <!-- Run MTC pick and place -->
   <node name="$(arg name)" pkg="moveit_task_constructor_demo" type="pick_place_demo" output="screen">
