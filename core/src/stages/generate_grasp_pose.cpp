@@ -58,6 +58,7 @@ GenerateGraspPose::GenerateGraspPose(const std::string& name) : GeneratePose(nam
 	p.declare<std::string>("eef", "name of end-effector");
 	p.declare<std::string>("object");
 	p.declare<double>("angle_delta", 0.1, "angular steps (rad)");
+	p.declare<double>("angle_offset", 0.0, "initial angle offset (rad)");
 	p.declare<Eigen::Vector3d>("rotation_axis", Eigen::Vector3d::UnitZ(), "rotate object pose about given axis");
 
 	p.declare<boost::any>("pregrasp", "pregrasp posture");
@@ -167,10 +168,15 @@ void GenerateGraspPose::compute() {
 	target_pose_msg.header.frame_id = props.get<std::string>("object");
 	Eigen::Vector3d rotation_axis = props.get<Eigen::Vector3d>("rotation_axis");
 
+	const double angle_delta = props.get<double>("angle_delta");
+	double angle_offset = props.get<double>("angle_offset");
+
 	double current_angle = 0.0;
-	while (M_TAU-current_angle > EPSILON && M_TAU+current_angle > EPSILON) {
+	while (M_TAU - current_angle > EPSILON && M_TAU + current_angle > EPSILON) {
+		double target_angle = current_angle + angle_offset;
+
 		// rotate object pose about axis
-		Eigen::Isometry3d target_pose(Eigen::AngleAxisd(current_angle, rotation_axis));
+		Eigen::Isometry3d target_pose(Eigen::AngleAxisd(target_angle, rotation_axis));
 
 		InterfaceState state(scene);
 		target_pose_msg.pose = tf2::toMsg(target_pose);
@@ -182,7 +188,7 @@ void GenerateGraspPose::compute() {
 		{
 			std::ostringstream comment;
 			comment.precision(4);
-			comment << "grasp angle: " << current_angle;
+			comment << "grasp angle: " << target_angle;
 			trajectory.setComment(std::move(comment).str());
 		}
 
@@ -191,7 +197,7 @@ void GenerateGraspPose::compute() {
 
 		spawn(std::move(state), std::move(trajectory));
 
-		current_angle += props.get<double>("angle_delta");
+		current_angle += angle_delta;
 	}
 }
 }  // namespace stages
