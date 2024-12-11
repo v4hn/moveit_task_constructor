@@ -332,20 +332,20 @@ bool PickPlaceTask::init() {
 		}
 
 		/****************************************************
-  .... *               Attach Object                      *
-		 ***************************************************/
-		{
-			auto stage = std::make_unique<stages::ModifyPlanningScene>("attach object");
-			stage->attachObject(object, hand_frame_);  // attach object to hand_frame_
-			grasp->insert(std::move(stage));
-		}
-
-		/****************************************************
   .... *               Allow collision (object support)   *
 		 ***************************************************/
 		{
 			auto stage = std::make_unique<stages::ModifyPlanningScene>("allow collision (object,support)");
 			stage->allowCollisions({ object }, support_surfaces_, true);
+			grasp->insert(std::move(stage));
+		}
+
+		/****************************************************
+  .... *               Attach Object                      *
+		 ***************************************************/
+		{
+			auto stage = std::make_unique<stages::ModifyPlanningScene>("attach object");
+			stage->attachObject(object, hand_frame_);  // attach object to hand_frame_
 			grasp->insert(std::move(stage));
 		}
 
