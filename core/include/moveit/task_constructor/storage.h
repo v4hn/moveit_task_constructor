@@ -356,7 +356,7 @@ public:
 	  : SolutionBase(nullptr, cost, std::move(comment)), trajectory_(trajectory) {}
 
 	robot_trajectory::RobotTrajectoryConstPtr trajectory() const { return trajectory_; }
-	void setTrajectory(const robot_trajectory::RobotTrajectoryPtr& t) { trajectory_ = t; }
+	void setTrajectory(const robot_trajectory::RobotTrajectoryConstPtr& t) { trajectory_ = t; }
 
 	void appendTo(moveit_task_constructor_msgs::Solution& msg, Introspection* introspection = nullptr) const override;
 
