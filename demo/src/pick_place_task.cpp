@@ -167,9 +167,7 @@ bool PickPlaceTask::init() {
 	// Reset ROS introspection before constructing the new object
 	// TODO(v4hn): global storage for Introspection services to enable one-liner
 	task_.reset();
-	task_.reset(new moveit::task_constructor::Task());
-
-	task_->enableIntrospection(false);
+	task_.reset(new moveit::task_constructor::Task("", /*introspection*/ false));
 
 	if (workers_ >= 0)
 		task_->setParallelExecutor(workers_);
@@ -535,16 +533,20 @@ bool PickPlaceTask::plan() {
 	ROS_INFO_NAMED(LOGNAME, "Start searching for task solutions");
 	ros::WallTime start_time = ros::WallTime::now();
 	auto result = static_cast<bool>(task_->plan());
-	ROS_WARN_STREAM_NAMED(LOGNAME, "Planning took " << (ros::WallTime::now() - start_time).toSec() * 1000.0
-	                                                << "ms to find " << task_->numSolutions()
-	                                                << " solution(s) with best solution "
-	                                                << task_->solutions().front()->cost());
+	ROS_WARN_STREAM_NAMED(LOGNAME, "Planning took "
+	                                   << (ros::WallTime::now() - start_time).toSec() * 1000.0 << "ms to find "
+	                                   << task_->numSolutions() << " solution(s) with best solution "
+	                                   << (task_->numSolutions() > 0 ? task_->solutions().front()->cost() :
+                                                                      std::numeric_limits<double>::infinity()));
 	return result;
 }
 
 void PickPlaceTask::introspection() {
 	ROS_INFO_NAMED(LOGNAME, "Spinning introspection");
 	task_->enableIntrospection(true);
+	if (!task_->solutions().empty()) {
+		task_->introspection().publishSolution(*task_->solutions().front());
+	}
 }
 
 bool PickPlaceTask::execute() {
