@@ -53,10 +53,11 @@ public:
 			moveit::task_constructor::SubTrajectory s{};
 			s.setStartState((it == seq.cbegin()) ? start : *last);
 
-			if ((*it)->trajectory()) {
-				auto e{ std::find_if(it, seq.cend(), [&](auto& s) -> bool {
-					return !s->trajectory() || s->trajectory()->getGroup() != (*it)->trajectory()->getGroup();
-				}) };
+			auto e{ std::find_if(it, seq.cend(), [&](auto& s) -> bool {
+				return !s->trajectory() || s->trajectory()->getGroup() != (*it)->trajectory()->getGroup();
+			}) };
+
+			if ((*it)->trajectory() && std::next(it) != e) {
 				// [it,e) can be merged into a new trajectory
 				auto t = std::make_shared<robot_trajectory::RobotTrajectory>(solution.start()->scene()->getRobotModel());
 				t->setGroupName((*it)->trajectory()->getGroupName());
@@ -98,8 +99,6 @@ public:
 			}
 
 			new_solutions.push_back(std::move(s));
-			// breaks if introspection is not available yet, but we have to register the solution?
-			// introspection()->registerSolution(new_solutions.back());
 			merged_seq.push_back(&new_solutions.back());
 		}
 
