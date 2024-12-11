@@ -101,7 +101,6 @@ Task createTask() {
 	auto wrapper = std::make_unique<ReparameterizeWrapper>("smooth", tp);
 	wrapper->setCostTerm(std::make_shared<cost::TrajectoryDuration>());
 	wrapper->setPublishOriginal(true);
-	wrapper->setGroup("panda_arm");
 	wrapper->add(std::move(c));
 
 	t.add(std::move(wrapper));

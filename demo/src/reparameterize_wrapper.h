@@ -22,34 +22,42 @@ void flattenSolution(const moveit::task_constructor::SolutionBase& solution,
 
 class ReparameterizeWrapper : public moveit::task_constructor::WrapperBase
 {
+	std::mutex mutex_;
+
 public:
 	ReparameterizeWrapper(const std::string& name, trajectory_processing::TimeParameterizationPtr reparameterize)
 	  : WrapperBase{ name }, reparameterize_{ reparameterize } {
 		properties().declare("publish_original", false, "republish original solution together with reparameterized one");
-		properties().declare<std::string>("group", "joint model group to reparameterize");
 	}
 
 	void setPublishOriginal(bool flag) { setProperty("publish_original", flag); }
-	void setGroup(std::string group) { setProperty("group", group); }
 
 	void onNewSolution(const moveit::task_constructor::SolutionBase& solution) override {
+		std::lock_guard<std::mutex> lock(mutex_);
+
 		if (properties().get<bool>("publish_original"))
 			liftSolution(solution, solution.cost(), "unchanged ");
 
 		std::vector<const moveit::task_constructor::SubTrajectory*> seq;
 		flattenSolution(solution, seq);
 
+		new_states.emplace_back(*solution.start());
+		moveit::task_constructor::InterfaceState& start{ new_states.back() };
+		new_states.emplace_back(*solution.end());
+		moveit::task_constructor::InterfaceState& end{ new_states.back() };
+		moveit::task_constructor::InterfaceState* last;
+
 		std::vector<const moveit::task_constructor::SolutionBase*> merged_seq;
 		auto it = seq.cbegin();
 		while (it != seq.cend()) {
-			auto e{ std::find_if(it, seq.cend(), [&](auto& s) -> bool {
-				return !s->trajectory() || s->trajectory()->getGroup() != (*it)->trajectory()->getGroup();
-			}) };
-			if (it == e) {
-				merged_seq.push_back(*it);
-				it = std::next(e);
-			} else {
-				// [it,end) can be merged into a new trajectory
+			moveit::task_constructor::SubTrajectory s{};
+			s.setStartState((it == seq.cbegin()) ? start : *last);
+
+			if ((*it)->trajectory()) {
+				auto e{ std::find_if(it, seq.cend(), [&](auto& s) -> bool {
+					return !s->trajectory() || s->trajectory()->getGroup() != (*it)->trajectory()->getGroup();
+				}) };
+				// [it,e) can be merged into a new trajectory
 				auto t = std::make_shared<robot_trajectory::RobotTrajectory>(solution.start()->scene()->getRobotModel());
 				t->setGroupName((*it)->trajectory()->getGroupName());
 
@@ -58,34 +66,52 @@ public:
 					t->append(*(*i)->trajectory(), 0.0);
 					cost += (*i)->cost();
 				}
+				s.setCost(cost);
 
 				if (!reparameterize_->computeTimeStamps(*t))
 					throw std::runtime_error("time reparametrization failed");
 
-				moveit::task_constructor::SubTrajectory s{ t };
-				s.setStartState(*(*it)->start());
-				s.setEndState(*(*std::prev(e))->end());
-				s.setCost(cost);
+				s.setTrajectory(t);
+
 				for (auto i = it; i != e; ++i) {
 					for (const auto& marker : (*i)->markers())
 						s.markers().push_back(marker);
 				}
 
-				merged_solutions.push_back(std::move(s));
-				merged_seq.push_back(&merged_solutions.back());
-
 				it = e;
+			} else {
+				s.setTrajectory((*it)->trajectory());
+				s.setComment((*it)->comment());
+				s.setCost((*it)->cost());
+				s.markers() = (*it)->markers();
+				++it;
 			}
+
+			s.setCreator(this);
+
+			if (it != seq.cend()) {
+				new_states.push_back(moveit::task_constructor::InterfaceState{ *(*std::prev(it))->end() });
+				s.setEndState(new_states.back());
+				last = &new_states.back();
+			} else {
+				s.setEndState(end);
+			}
+
+			new_solutions.push_back(std::move(s));
+			// breaks if introspection is not available yet, but we have to register the solution?
+			// introspection()->registerSolution(new_solutions.back());
+			merged_seq.push_back(&new_solutions.back());
 		}
 
 		auto sseq = std::make_shared<moveit::task_constructor::SolutionSequence>(std::move(merged_seq), solution.cost());
 		sseq->setComment("smoother");
-		spawn(moveit::task_constructor::InterfaceState{ *solution.start() },
-		      moveit::task_constructor::InterfaceState{ *solution.end() }, std::move(sseq));
+		spawn(moveit::task_constructor::InterfaceState{ start }, moveit::task_constructor::InterfaceState{ end },
+		      std::move(sseq));
 	}
 
 private:
 	trajectory_processing::TimeParameterizationPtr reparameterize_;
 
-	std::list<moveit::task_constructor::SubTrajectory> merged_solutions;
+	std::list<moveit::task_constructor::SubTrajectory> new_solutions;
+	std::list<moveit::task_constructor::InterfaceState> new_states;
 };
