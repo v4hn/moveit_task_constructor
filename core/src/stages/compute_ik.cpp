@@ -332,8 +332,8 @@ void ComputeIK::compute() {
 	// end-effector markers
 	std::deque<visualization_msgs::Marker> eef_markers;
 	// visualize placed end-effector
-	auto appender = [&eef_markers](visualization_msgs::Marker& marker, const std::string& /*name*/) {
-		marker.ns = "ik target";
+	auto appender = [&eef_markers, this](visualization_msgs::Marker& marker, const std::string& /*name*/) {
+		marker.ns = name() + " ik target";
 		marker.color.a *= 0.5;
 		eef_markers.push_back(marker);
 	};
