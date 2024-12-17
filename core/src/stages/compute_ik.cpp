@@ -218,7 +218,7 @@ void ComputeIK::init(const moveit::core::RobotModelConstPtr& robot_model) {
 
 void ComputeIK::onNewSolution(const SolutionBase& s) {
 	assert(s.start() && s.end());
-	assert(s.start()->scene() == s.end()->scene());  // wrapped child should be a generator
+	assert(s.start()->scene() == s.end()->scene());  // wrapped child should be an instantaneous generator
 
 	// It's safe to store a pointer to the solution, as the generating stage stores it
 	upstream_solutions_.push(&s);
