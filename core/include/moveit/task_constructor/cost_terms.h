@@ -42,6 +42,8 @@
 #include <moveit/task_constructor/utils.h>
 #include <moveit_msgs/RobotState.h>
 
+#include <random>
+
 namespace moveit {
 namespace task_constructor {
 
@@ -213,6 +215,23 @@ public:
 
 	using TrajectoryCostTerm::operator();
 	double operator()(const SubTrajectory& s, std::string& comment) const override;
+};
+
+class UniformRandom : public CostTerm
+{
+public:
+	UniformRandom(unsigned int seed = 37, double min = 0.0, double max = 1.0)
+	  : engine{ seed }, distribution{ min, max } {}
+
+	mutable std::default_random_engine engine;
+	mutable std::uniform_real_distribution<double> distribution;
+
+	double operator()(const SubTrajectory& s, std::string& comment) const override;
+	double operator()(const SolutionSequence& s, std::string& comment) const override;
+	double operator()(const WrappedSolution& s, std::string& comment) const override;
+
+protected:
+	mutable std::mutex engine_lock;
 };
 
 }  // namespace cost

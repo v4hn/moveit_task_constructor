@@ -325,6 +325,22 @@ double Clearance::operator()(const SubTrajectory& s, std::string& comment) const
 
 	return distance_to_cost(distance);
 }
+
+double UniformRandom::operator()(const SubTrajectory& /*s*/, std::string& /*comment*/) const {
+	std::lock_guard<std::mutex> lock(engine_lock);
+	return distribution(engine);
+}
+
+double UniformRandom::operator()(const SolutionSequence& /*s*/, std::string& /*comment*/) const {
+	std::lock_guard<std::mutex> lock(engine_lock);
+	return distribution(engine);
+}
+
+double UniformRandom::operator()(const WrappedSolution& /*s*/, std::string& /*comment*/) const {
+	std::lock_guard<std::mutex> lock(engine_lock);
+	return distribution(engine);
+}
+
 }  // namespace cost
 }  // namespace task_constructor
 }  // namespace moveit
