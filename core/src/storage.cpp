@@ -114,7 +114,6 @@ void Interface::add(InterfaceState& state) {
 	// move state to a list node
 	std::list<InterfaceState*> container;
 	Interface::iterator it = container.insert(container.end(), &state);
-	it->owner_ = this;
 
 	// if either incoming or outgoing is defined, derive priority from there
 	if (!state.incomingTrajectories().empty())
@@ -126,11 +125,14 @@ void Interface::add(InterfaceState& state) {
 		assert(it->priority_.depth() >= 1u);
 	}
 
-	// move list node into interface's state list (sorted by priority)
 	{
 		std::scoped_lock lock(mutex_);
+
+		it->owner_ = this;
+		// move list node into interface's state list (sorted by priority)
 		moveFrom(it, container);
 	}
+
 	// and finally call notify callback
 	if (notify_)
 		notify_(it, UpdateFlags());
@@ -141,8 +143,8 @@ Interface::container_type Interface::remove(iterator it) {
 	{
 		std::scoped_lock lock(mutex_);
 		moveTo(it, result, result.end());
+		it->owner_ = nullptr;
 	}
-	it->owner_ = nullptr;
 	return result;
 }
 
