@@ -297,6 +297,7 @@ bool PickPlaceTask::init() {
 			stage->setObject(object);  // object to sample grasps for
 			stage->setAngleDelta(M_PI / 12);
 			stage->setMonitoredStage(initial_state_ptr);  // hook into successful initial-phase solutions
+			stage->setCostTerm(std::make_unique<cost::UniformRandom>());
 
 			// Compute IK for sampled grasp poses
 			auto wrapper = std::make_unique<stages::ComputeIK>("grasp pose IK", std::move(stage));
