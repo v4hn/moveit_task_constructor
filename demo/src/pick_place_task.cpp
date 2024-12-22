@@ -532,13 +532,33 @@ bool PickPlaceTask::init() {
 
 bool PickPlaceTask::plan() {
 	ROS_INFO_NAMED(LOGNAME, "Start searching for task solutions");
-	ros::WallTime start_time = ros::WallTime::now();
+	ros::WallTime end_time;
+	std::vector<double> costs;
+	costs.reserve(task_->maxSolutions() ? task_->maxSolutions() : 1000);
+	auto solutions = task_->maxSolutions() > 0 ? task_->maxSolutions() : std::numeric_limits<size_t>::max();
+	task_->addSolutionCallback([&end_time, &t = task_, solutions, &costs](const SolutionBase& s) {
+		if (end_time.isZero() && t->numSolutions() >= solutions && !s.isFailure())
+			end_time = ros::WallTime::now();
+		costs.push_back(s.cost());
+	});
+	task_->init();
+	ros::WallTime start_time{ ros::WallTime::now() };
 	auto result = static_cast<bool>(task_->plan());
+	if (end_time.isZero()) {
+		end_time = ros::WallTime::now();
+	}
+
 	ROS_WARN_STREAM_NAMED(LOGNAME, "Planning took "
 	                                   << (ros::WallTime::now() - start_time).toSec() * 1000.0 << "ms to find "
 	                                   << task_->numSolutions() << " solution(s) with best solution "
 	                                   << (task_->numSolutions() > 0 ? task_->solutions().front()->cost() :
                                                                       std::numeric_limits<double>::infinity()));
+	std::stringstream ss;
+	ss << "All Costs: ";
+	for (auto const& cost : costs) {
+		ss << cost << " ";
+	}
+	ROS_WARN_STREAM_NAMED(LOGNAME, ss.str());
 	return result;
 }
 
