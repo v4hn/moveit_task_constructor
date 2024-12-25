@@ -1189,8 +1189,7 @@ void Merger::onNewSolution(const SolutionBase& s) {
 void MergerPrivate::onNewPropagateSolution(const SolutionBase& s) {
 	const SubTrajectory* trajectory = dynamic_cast<const SubTrajectory*>(&s);
 	if (!trajectory || !trajectory->trajectory()) {
-		ROS_ERROR_NAMED("Merger", "Only simple, valid trajectories are supported");
-		return;
+		throw std::runtime_error{ "Merger only supports simple SubTrajectory solutions" };
 	}
 
 	InterfaceFlags dir = interfaceFlags();
