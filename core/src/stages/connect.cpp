@@ -226,6 +226,7 @@ Connect::makeSequential(const std::vector<robot_trajectory::RobotTrajectoryConst
 	/* We need to decouple the sequence of subsolutions, created here, from the external from and to states.
 	   Hence, we create new interface states for all subsolutions. */
 	const InterfaceState* start = &*states_.insert(states_.end(), InterfaceState(from.scene()));
+	const InterfaceState* end = nullptr;
 
 	auto scene_it = intermediate_scenes.begin();
 	SolutionSequence::container_type sub_solutions;
@@ -233,7 +234,12 @@ Connect::makeSequential(const std::vector<robot_trajectory::RobotTrajectoryConst
 		// persistently store sub solution
 		auto inserted = subsolutions_.insert(subsolutions_.end(), SubTrajectory(sub));
 		inserted->setCreator(this);
-		if (!sub)  // a null RobotTrajectoryPtr indicates a failure
+
+		// a null RobotTrajectoryPtr indicates a planner failure
+		// also the first trajectory changed the state, we also need to check whether all later trajectories are still
+		// valid
+		if (!sub ||
+		    (end && !end->scene()->isPathValid(*sub, properties().get<moveit_msgs::Constraints>("path_constraints"))))
 			inserted->markAsFailure();
 		// push back solution pointer
 		sub_solutions.push_back(&*inserted);
@@ -241,7 +247,7 @@ Connect::makeSequential(const std::vector<robot_trajectory::RobotTrajectoryConst
 		// create a new end state, either from intermediate or final planning scene
 		planning_scene::PlanningSceneConstPtr end_ps =
 		    (sub_solutions.size() < sub_trajectories.size()) ? *++scene_it : to.scene();
-		const InterfaceState* end = &*states_.insert(states_.end(), InterfaceState(end_ps));
+		end = &*states_.insert(states_.end(), InterfaceState(end_ps));
 
 		// provide newly created start/end states
 		subsolutions_.back().setStartState(*start);
