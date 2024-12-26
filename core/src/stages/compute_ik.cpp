@@ -218,7 +218,7 @@ void ComputeIK::init(const moveit::core::RobotModelConstPtr& robot_model) {
 
 void ComputeIK::onNewSolution(const SolutionBase& s) {
 	assert(s.start() && s.end());
-	assert(s.start()->scene() == s.end()->scene());  // wrapped child should be a generator
+	assert(s.start()->scene() == s.end()->scene());  // wrapped child should be an instantaneous generator
 
 	// It's safe to store a pointer to the solution, as the generating stage stores it
 	upstream_solutions_.push(&s);
@@ -237,9 +237,8 @@ void ComputeIK::compute() {
 
 	const SolutionBase& s = *upstream_solutions_.pop();
 
-	// -1 TODO: this should not be necessary in my opinion: Why do you think so?
-	// It is, because the properties on the interface might change from call to call...
-	// enforced initialization from interface ensures that new target_pose is read
+	// TODO: ideally initialization from INTERFACE should not have to be done manually
+	// *anywhere* and should also not modify state of the Stage as this breaks reentrant attempt planning
 	properties().performInitFrom(INTERFACE, s.start()->properties());
 	const auto& props = properties();
 
