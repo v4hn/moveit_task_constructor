@@ -912,6 +912,9 @@ void ConnectingPrivate::compute() {
 		const InterfaceState& from{ *top.first };
 		const InterfaceState& to{ *top.second };
 		assert(from.priority().enabled() && to.priority().enabled());
+		properties_.performInitFrom(Stage::INTERFACE, from.properties());
+		properties_.performInitFrom(Stage::INTERFACE, to.properties());
+
 		executor_->run(me->name(), [me, i, &from, &to] { me->compute(from, to, i); });
 		++i;
 	}
