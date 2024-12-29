@@ -271,6 +271,11 @@ protected:
 	/// Stage cannot be copied
 	Stage(const Stage&) = delete;
 
+	/// helper method to run additional computations outside of Generator/Propagator/Connecting::compute()
+	// the main use of this function is to ensure additional computation in containers can be parallelized,
+	// as ContainerBase::compute is expected to trigger computation and return immediately
+	void computeAdditional(std::function<void()> f);
+
 protected:
 	StagePrivate* pimpl_;
 };

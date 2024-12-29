@@ -77,6 +77,7 @@ public:
 	bool canCompute() const override;
 
 	void compute() override;
+	void computeIK();
 
 	void setEndEffector(const std::string& eef) { setProperty("eef", eef); }
 	void setGroup(const std::string& group) { setProperty("group", group); }

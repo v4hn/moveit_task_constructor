@@ -520,6 +520,10 @@ std::ostream& operator<<(std::ostream& os, const StagePrivate& impl) {
 	return os;
 }
 
+void Stage::computeAdditional(std::function<void()> f) {
+	pimpl()->executor_->run(name(), std::move(f));
+}
+
 ComputeBase::ComputeBase(ComputeBasePrivate* impl) : Stage(impl) {}
 
 PropagatingEitherWayPrivate::PropagatingEitherWayPrivate(PropagatingEitherWay* me, PropagatingEitherWay::Direction dir,

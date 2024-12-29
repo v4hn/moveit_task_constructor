@@ -232,6 +232,10 @@ void ComputeIK::compute() {
 	if (WrapperBase::canCompute())
 		WrapperBase::compute();
 
+	computeAdditional([this] { computeIK(); });
+}
+
+void ComputeIK::computeIK() {
 	if (upstream_solutions_.empty())
 		return;
 
