@@ -28,15 +28,19 @@ public:
 	ReparameterizeWrapper(const std::string& name, trajectory_processing::TimeParameterizationPtr reparameterize)
 	  : WrapperBase{ name }, reparameterize_{ reparameterize } {
 		properties().declare("publish_original", false, "republish original solution together with reparameterized one");
+		properties().declare("recheck_validity", true, "recheck validity of reparameterized trajectory");
 	}
 
 	void setPublishOriginal(bool flag) { setProperty("publish_original", flag); }
+	void setRecheckValidity(bool flag) { setProperty("recheck_validity", flag); }
 
 	void onNewSolution(const moveit::task_constructor::SolutionBase& solution) override {
 		std::lock_guard<std::mutex> lock(mutex_);
 
 		if (properties().get<bool>("publish_original"))
-			liftSolution(solution, solution.cost(), "unchanged ");
+			liftSolution(solution, solution.cost(), "original");
+
+		bool recheck_validity = properties().get<bool>("recheck_validity");
 
 		std::vector<moveit::task_constructor::SubTrajectory const*> seq;
 		flattenSolution(solution, seq);
@@ -76,6 +80,10 @@ public:
 					throw std::runtime_error("time reparametrization failed");
 
 				s.setTrajectory(t);
+
+				if (recheck_validity && !s.start()->scene()->isPathValid(*t)) {
+					s.markAsFailure("reparameterized trajectory became invalid");
+				}
 
 				for (auto i = it; i != e; ++i) {
 					for (const auto& marker : (*i)->markers())
