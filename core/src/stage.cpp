@@ -743,8 +743,7 @@ void MonitoringGenerator::init(const moveit::core::RobotModelConstPtr& robot_mod
 	if (!impl->monitored_)
 		throw InitStageException(*this, "no monitored stage defined");
 	if (!impl->registered_) {  // register only once
-		impl->cb_ = impl->monitored_->addSolutionCallback(
-		    std::bind(&MonitoringGeneratorPrivate::solutionCB, impl, std::placeholders::_1));
+		impl->cb_ = impl->monitored_->addSolutionCallback([impl](const SolutionBase& s) { impl->solutionCB(s); });
 		impl->registered_ = true;
 	}
 }

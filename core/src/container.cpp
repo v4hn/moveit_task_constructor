@@ -674,8 +674,8 @@ void SerialContainerPrivate::validateConnectivity() const {
 
 	// validate connectivity of children between each other
 	// ContainerBasePrivate::validateConnectivity() ensures that required push interfaces are present,
-	// that is, neighbouring stages have a corresponding pull interface.
-	// Here, it remains to check that - if a child has a pull interface - it's indeed feeded.
+	// that is, neighboring stages have a corresponding pull interface.
+	// Here, it remains to check that - if a child has a pull interface - it's indeed fed.
 	for (auto cur = children().begin(), end = children().end(); cur != end; ++cur) {
 		const StagePrivate* const cur_impl = **cur;
 		InterfaceFlags required = cur_impl->interfaceFlags();
