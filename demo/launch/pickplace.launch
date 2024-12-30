@@ -3,7 +3,7 @@
   <arg name="execute" default="true" />
   <arg name="max_solutions" default="10" />
   <arg name="workers" default="-1" />
-  <arg name="connect_parallel_attempts" default="$(eval arg('workers') if arg('workers') > 0 else 1)" />
+  <arg name="connect_compute_attempts" default="1" />
   <arg name="keep_running" default="true" />
   <arg name="name" default="mtc_tutorial" />
 
@@ -13,7 +13,7 @@
     <rosparam command="load" file="$(find moveit_task_constructor_demo)/config/panda_config.yaml" />
     <param name="max_solutions" value="$(arg max_solutions)" />
     <param name="workers" value="$(arg workers)" />
-    <param name="connect_parallel_attempts" value="$(arg connect_parallel_attempts)" />
+    <param name="connect_compute_attempts" value="$(arg connect_compute_attempts)" />
     <param name="keep_running" value="$(arg keep_running)" />
   </node>
 </launch>
