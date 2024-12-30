@@ -442,8 +442,12 @@ void ComputeIK::computeIK() {
 		// for all new solutions (successes and failures)
 		for (size_t i = previous; i != ik_solutions.size(); ++i) {
 			// create a new scene for each solution as they will have different robot states
-			planning_scene::PlanningScenePtr solution_scene = scene->diff();
 			SubTrajectory solution;
+			planning_scene::PlanningScenePtr solution_scene = scene->diff();
+			moveit::core::RobotState& solution_state = solution_scene->getCurrentStateNonConst();
+			solution_state.setJointGroupPositions(jmg, ik_solutions[i].joint_positions.data());
+			solution_state.update();
+
 			solution.setComment(s.comment());
 			std::copy(frame_markers.begin(), frame_markers.end(), std::back_inserter(solution.markers()));
 
@@ -454,14 +458,38 @@ void ComputeIK::computeIK() {
 				std::stringstream ss;
 				ss << "Collision between '" << ik_solutions[i].contact.body_name_1 << "' and '"
 				   << ik_solutions[i].contact.body_name_2 << "'";
+
+				visualization_msgs::Marker marker;
+				rviz_marker_tools::makeSphere(marker, 0.03);
+				marker.id = 0;
+				marker.header.frame_id = scene->getPlanningFrame();
+				marker.pose.position.x = ik_solutions[i].contact.pos.x();
+				marker.pose.position.y = ik_solutions[i].contact.pos.y();
+				marker.pose.position.z = ik_solutions[i].contact.pos.z();
+				marker.ns = "collision point";
+				rviz_marker_tools::setColor(marker.color, rviz_marker_tools::Color::RED, 1.0);
+				solution.markers().push_back(marker);
+
+				std::vector<moveit::core::LinkModel const*> links_to_visualize;
+				for (const auto& link : { ik_solutions[i].contact.body_name_1, ik_solutions[i].contact.body_name_2 }) {
+					if (scene->getRobotModel()->hasLinkModel(link))
+						links_to_visualize.push_back(scene->getRobotModel()->getLinkModel(link));
+				}
+
+				generateCollisionMarkers(
+				    solution_scene->getCurrentState(),
+				    [this, &solution](auto marker, auto link) {
+					    marker.color.a *= 0.5;
+					    marker.color.r = 1.0;
+					    marker.ns = "collision links";
+					    solution.markers().push_back(marker);
+				    },
+				    links_to_visualize);
+
 				solution.markAsFailure(ss.str());
 			} else if (!ik_solutions[i].satisfies_constraints) {  // solution was violating constraints
 				solution.markAsFailure("Constraints violated");
 			}
-			// set scene's robot state
-			moveit::core::RobotState& solution_state = solution_scene->getCurrentStateNonConst();
-			solution_state.setJointGroupPositions(jmg, ik_solutions[i].joint_positions.data());
-			solution_state.update();
 
 			InterfaceState state(solution_scene);
 			forwardProperties(*s.start(), state);
