@@ -416,6 +416,13 @@ bool PickPlaceTask::init() {
 		/******************************************************
   ---- *          Lower Object                              *
 		 *****************************************************/
+
+		{
+			auto stage = std::make_unique<stages::ModifyPlanningScene>("allow collision (object,support)");
+			stage->allowCollisions({ object }, support_surfaces_, true);
+			place->insert(std::move(stage));
+		}
+
 		{
 			auto stage = std::make_unique<stages::MoveRelative>("lower object", cartesian_planner);
 			stage->properties().set("marker_ns", "lower_object");
@@ -440,6 +447,7 @@ bool PickPlaceTask::init() {
 			stage->properties().configureInitFrom(Stage::PARENT, { "ik_frame" });
 			stage->properties().set("marker_ns", "place_pose");
 			stage->setObject(object);
+			stage->setSurface(surface_link_);
 
 			// Set target pose
 			geometry_msgs::PoseStamped p;
@@ -459,6 +467,24 @@ bool PickPlaceTask::init() {
 		}
 
 		/******************************************************
+  ---- *          Detach Object                             *
+		 *****************************************************/
+		{
+			auto stage = std::make_unique<stages::ModifyPlanningScene>("detach object");
+			stage->detachObject(object_name_, hand_frame_);
+			place->insert(std::move(stage));
+		}
+
+		/******************************************************
+  ---- *          Forbid collision (object, support)        *
+		 *****************************************************/
+		{
+			auto stage = std::make_unique<stages::ModifyPlanningScene>("forbid collision (object,support)");
+			stage->allowCollisions({ object }, support_surfaces_, false);
+			place->insert(std::move(stage));
+		}
+
+		/******************************************************
   ---- *          Open Hand                              *
 		 *****************************************************/
 		{
@@ -474,15 +500,6 @@ bool PickPlaceTask::init() {
 		{
 			auto stage = std::make_unique<stages::ModifyPlanningScene>("forbid collision (hand,object)");
 			stage->allowCollisions(object_name_, *t.getRobotModel()->getJointModelGroup(hand_group_name_), false);
-			place->insert(std::move(stage));
-		}
-
-		/******************************************************
-  ---- *          Detach Object                             *
-		 *****************************************************/
-		{
-			auto stage = std::make_unique<stages::ModifyPlanningScene>("detach object");
-			stage->detachObject(object_name_, hand_frame_);
 			place->insert(std::move(stage));
 		}
 

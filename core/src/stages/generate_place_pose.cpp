@@ -54,6 +54,8 @@ namespace stages {
 GeneratePlacePose::GeneratePlacePose(const std::string& name) : GeneratePose(name) {
 	auto& p = properties();
 	p.declare<std::string>("object");
+	p.declare<std::string>("surface", "",
+	                       "name of the support surface on which to place the object (used to permit contact with it)");
 	p.declare<bool>("allow_z_flip", false, "allow placing objects upside down");
 	p.declare<int>("rotations", 1, "considered amount of object orientations about z-axis");
 }
@@ -79,7 +81,7 @@ void GeneratePlacePose::compute() {
 		return;
 
 	const SolutionBase& s = *upstream_solutions_.pop();
-	planning_scene::PlanningSceneConstPtr scene = s.end()->scene()->diff();
+	planning_scene::PlanningScenePtr scene = s.end()->scene()->diff();
 	const moveit::core::RobotState& robot_state = scene->getCurrentState();
 	const auto& props = properties();
 
@@ -94,6 +96,10 @@ void GeneratePlacePose::compute() {
 	tf2::fromMsg(pose_msg.pose, target_pose);
 	// target pose w.r.t. planning frame
 	scene->getTransforms().transformPose(pose_msg.header.frame_id, target_pose, target_pose);
+
+	const std::string& surface = props.get<std::string>("surface");
+	if (!surface.empty())
+		scene->getAllowedCollisionMatrixNonConst().setEntry(frame_id, surface, true);
 
 	// spawn the nominal target object pose, considering flip about z and rotations about z-axis
 	auto spawner = [&s, &scene, &ik_frame, this](const Eigen::Isometry3d& nominal, uint z_flips, uint z_rotations) {
