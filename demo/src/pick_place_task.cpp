@@ -220,6 +220,10 @@ bool PickPlaceTask::init() {
 				comment = "object with id '" + object + "' is already attached and cannot be picked";
 				return false;
 			}
+			if (!s.start()->scene()->getWorld()->hasObject(object)) {
+				comment = "object '" + object + "' is not available in the scene and cannot be picked";
+				return false;
+			}
 			return true;
 		});
 		t.add(std::move(applicability_filter));
