@@ -361,8 +361,8 @@ void ComputeIK::computeIK() {
 			}
 		}
 		std::copy(eef_markers.begin(), eef_markers.end(), std::back_inserter(solution.markers()));
-		solution.markAsFailure();
-		solution.setComment(s.comment() + " eef in collision: " + listCollisionPairs(collisions.contacts, ", "));
+		solution.setComment(s.comment());
+		solution.markAsFailure("eef in collision: " + listCollisionPairs(collisions.contacts, ", "));
 		auto colliding_scene{ scene->diff() };
 		colliding_scene->setCurrentState(sandbox_state);
 		spawn(InterfaceState(colliding_scene), std::move(solution));
@@ -454,7 +454,7 @@ void ComputeIK::computeIK() {
 				solution.setCost(s.cost() + jmg->distance(ik_solutions[i].joint_positions.data(), compare_pose.data()));
 			else if (!ik_solutions[i].collision_free) {  // solution was in collision
 				std::stringstream ss;
-				ss << "Collision between '" << ik_solutions[i].contact.body_name_1 << "' and '"
+				ss << "collision between '" << ik_solutions[i].contact.body_name_1 << "' and '"
 				   << ik_solutions[i].contact.body_name_2 << "'";
 
 				visualization_msgs::Marker marker;
@@ -509,8 +509,8 @@ void ComputeIK::computeIK() {
 		planning_scene::PlanningScenePtr scene = s.start()->scene()->diff();
 		SubTrajectory solution;
 
-		solution.markAsFailure();
-		solution.setComment(s.comment() + " no IK found");
+		solution.setComment(s.comment());
+		solution.markAsFailure("no IK solution found");
 		std::copy(frame_markers.begin(), frame_markers.end(), std::back_inserter(solution.markers()));
 
 		// ik target link placement
