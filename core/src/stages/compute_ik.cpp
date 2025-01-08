@@ -188,7 +188,10 @@ bool validateGroup(const PropertyMap& props, const moveit::core::RobotModelConst
 }  // anonymous namespace
 
 void ComputeIK::reset() {
-	upstream_solutions_.clear();
+	{
+		std::lock_guard<std::mutex> lock{ upstream_solutions_mutex_ };
+		upstream_solutions_.clear();
+	}
 	WrapperBase::reset();
 }
 
@@ -221,10 +224,12 @@ void ComputeIK::onNewSolution(const SolutionBase& s) {
 	assert(s.start()->scene() == s.end()->scene());  // wrapped child should be an instantaneous generator
 
 	// It's safe to store a pointer to the solution, as the generating stage stores it
+	std::lock_guard<std::mutex> lock{ upstream_solutions_mutex_ };
 	upstream_solutions_.push(&s);
 }
 
 bool ComputeIK::canCompute() const {
+	std::lock_guard<std::mutex> lock{ upstream_solutions_mutex_ };
 	return !upstream_solutions_.empty() || WrapperBase::canCompute();
 }
 
@@ -236,17 +241,21 @@ void ComputeIK::compute() {
 }
 
 void ComputeIK::computeIK() {
-	if (upstream_solutions_.empty())
-		return;
+	const SolutionBase* s;
+	{
+		std::lock_guard<std::mutex> lock{ upstream_solutions_mutex_ };
+		if (upstream_solutions_.empty())
+			return;
 
-	const SolutionBase& s = *upstream_solutions_.pop();
+		s = upstream_solutions_.pop();
+	}
 
 	// TODO: ideally initialization from INTERFACE should not have to be done manually
 	// *anywhere* and should also not modify state of the Stage as this breaks reentrant attempt planning
-	properties().performInitFrom(INTERFACE, s.start()->properties());
+	properties().performInitFrom(INTERFACE, s->start()->properties());
 	const auto& props = properties();
 
-	const planning_scene::PlanningSceneConstPtr& scene{ s.start()->scene() };
+	const planning_scene::PlanningSceneConstPtr& scene{ s->start()->scene() };
 
 	const bool ignore_collisions = props.get<bool>("ignore_collisions");
 	const auto& robot_model = scene->getRobotModel();
@@ -361,7 +370,7 @@ void ComputeIK::computeIK() {
 			}
 		}
 		std::copy(eef_markers.begin(), eef_markers.end(), std::back_inserter(solution.markers()));
-		solution.setComment(s.comment());
+		solution.setComment(s->comment());
 		solution.markAsFailure("eef in collision: " + listCollisionPairs(collisions.contacts, ", "));
 		auto colliding_scene{ scene->diff() };
 		colliding_scene->setCurrentState(sandbox_state);
@@ -446,12 +455,12 @@ void ComputeIK::computeIK() {
 			solution_state.setJointGroupPositions(jmg, ik_solutions[i].joint_positions.data());
 			solution_state.update();
 
-			solution.setComment(s.comment());
+			solution.setComment(s->comment());
 			std::copy(frame_markers.begin(), frame_markers.end(), std::back_inserter(solution.markers()));
 
 			if (ik_solutions[i].collision_free && ik_solutions[i].satisfies_constraints)
 				// compute cost as distance to compare_pose
-				solution.setCost(s.cost() + jmg->distance(ik_solutions[i].joint_positions.data(), compare_pose.data()));
+				solution.setCost(s->cost() + jmg->distance(ik_solutions[i].joint_positions.data(), compare_pose.data()));
 			else if (!ik_solutions[i].collision_free) {  // solution was in collision
 				std::stringstream ss;
 				ss << "collision between '" << ik_solutions[i].contact.body_name_1 << "' and '"
@@ -490,7 +499,7 @@ void ComputeIK::computeIK() {
 			}
 
 			InterfaceState state(solution_scene);
-			forwardProperties(*s.start(), state);
+			forwardProperties(*s->start(), state);
 
 			// ik target link placement
 			std::copy(eef_markers.begin(), eef_markers.end(), std::back_inserter(solution.markers()));
@@ -506,10 +515,10 @@ void ComputeIK::computeIK() {
 	}
 
 	if (ik_solutions.empty()) {  // failed to find any solution
-		planning_scene::PlanningScenePtr scene = s.start()->scene()->diff();
+		planning_scene::PlanningScenePtr scene = s->start()->scene()->diff();
 		SubTrajectory solution;
 
-		solution.setComment(s.comment());
+		solution.setComment(s->comment());
 		solution.markAsFailure("no IK solution found");
 		std::copy(frame_markers.begin(), frame_markers.end(), std::back_inserter(solution.markers()));
 

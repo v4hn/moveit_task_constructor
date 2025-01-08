@@ -41,6 +41,8 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <Eigen/Geometry>
 
+#include <mutex>
+
 namespace moveit {
 namespace core {
 MOVEIT_CLASS_FORWARD(RobotState);
@@ -112,6 +114,7 @@ public:
 	void setMinSolutionDistance(double distance) { setProperty("min_solution_distance", distance); }
 
 protected:
+	mutable std::mutex upstream_solutions_mutex_;
 	ordered<const SolutionBase*> upstream_solutions_;
 };
 }  // namespace stages
