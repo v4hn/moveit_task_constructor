@@ -100,7 +100,7 @@ bool MoveTo::getJointStateGoal(const boost::any& goal, const moveit::core::Joint
 		// try named joint pose
 		const std::string& named_joint_pose = boost::any_cast<std::string>(goal);
 		if (!state.setToDefaultValues(jmg, named_joint_pose))
-			throw InitStageException(*this, "Unknown joint pose: " + named_joint_pose);
+			throw std::runtime_error("Unknown joint pose: " + named_joint_pose);
 		state.update();
 		return true;
 	} catch (const boost::bad_any_cast&) {
@@ -110,16 +110,16 @@ bool MoveTo::getJointStateGoal(const boost::any& goal, const moveit::core::Joint
 		// try RobotState
 		const moveit_msgs::RobotState& msg = boost::any_cast<moveit_msgs::RobotState>(goal);
 		if (!msg.is_diff)
-			throw InitStageException(*this, "Expecting a diff state");
+			throw std::runtime_error("Expecting a diff state");
 
 		// validate specified joints, we compare variable names to allow namespaced multi-dof joints
 		const auto& accepted = jmg->getVariableNames();
 		for (const auto& name : msg.joint_state.name)
 			if (std::find(accepted.begin(), accepted.end(), name) == accepted.end())
-				throw InitStageException(*this, "Joint '" + name + "' is not part of group '" + jmg->getName() + "'");
+				throw std::runtime_error("Joint '" + name + "' is not part of group '" + jmg->getName() + "'");
 		for (const auto& name : msg.multi_dof_joint_state.joint_names)
 			if (std::find(accepted.begin(), accepted.end(), name) == accepted.end())
-				throw InitStageException(*this, "Joint '" + name + "' is not part of group '" + jmg->getName() + "'");
+				throw std::runtime_error("Joint '" + name + "' is not part of group '" + jmg->getName() + "'");
 
 		moveit::core::robotStateMsgToRobotState(msg, state, false);
 		return true;
@@ -131,8 +131,7 @@ bool MoveTo::getJointStateGoal(const boost::any& goal, const moveit::core::Joint
 		const auto& accepted = jmg->getJointModelNames();
 		for (const auto& joint : joint_map) {
 			if (std::find(accepted.begin(), accepted.end(), joint.first) == accepted.end())
-				throw InitStageException(*this,
-				                         "Joint '" + joint.first + "' is not part of group '" + jmg->getName() + "'");
+				throw std::runtime_error("Joint '" + joint.first + "' is not part of group '" + jmg->getName() + "'");
 			state.setVariablePosition(joint.first, joint.second);
 		}
 		state.update();
