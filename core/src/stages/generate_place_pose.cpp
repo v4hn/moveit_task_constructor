@@ -135,7 +135,7 @@ void GeneratePlacePose::compute() {
 	uint z_flips = props.get<bool>("allow_z_flip") ? 1 : 0;
 	uint z_rotations = props.get<int>("rotations");
 	if (z_rotations < 1)
-		throw InitStageException(*this, "rotations must be >= 1");
+		throw std::runtime_error{ "rotations must be >= 1" };
 	if (object && object->getShapes().size() == 1) {
 		switch (object->getShapes()[0]->type) {
 			case shapes::CYLINDER:

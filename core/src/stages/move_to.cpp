@@ -190,7 +190,6 @@ bool MoveTo::compute(const InterfaceState& state, planning_scene::PlanningSceneP
 	boost::any goal = props.get("goal");
 	if (goal.empty()) {
 		throw std::runtime_error{ "undefined goal" };
-		return false;
 	}
 
 	const auto& path_constraints = props.get<moveit_msgs::Constraints>("path_constraints");
@@ -215,8 +214,7 @@ bool MoveTo::compute(const InterfaceState& state, planning_scene::PlanningSceneP
 		std::string error_msg;
 
 		if (!utils::getRobotTipForFrame(props.property("ik_frame"), *scene, jmg, error_msg, link, ik_pose_world)) {
-			solution.markAsFailure(error_msg);
-			return false;
+			throw std::runtime_error{ error_msg };
 		}
 
 		if (!getPoseGoal(goal, scene, target) && !getPointGoal(goal, ik_pose_world, scene, target)) {
