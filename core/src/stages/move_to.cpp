@@ -256,10 +256,8 @@ bool MoveTo::compute(const InterfaceState& state, planning_scene::PlanningSceneP
 
 		if (!success)
 			solution.markAsFailure(comment);
-
-		return true;
 	}
-	return false;
+	return true;
 }
 
 }  // namespace stages
