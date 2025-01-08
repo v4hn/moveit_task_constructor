@@ -306,9 +306,7 @@ void ComputeIK::computeIK() {
 		tf2::fromMsg(ik_pose_msg.pose, ik_pose);
 
 		if (!scene->getCurrentState().knowsFrameTransform(ik_pose_msg.header.frame_id)) {
-			spawn(InterfaceState{ scene },
-			      SubTrajectory::failure(fmt::format("ik frame unknown in robot: '{}'", ik_pose_msg.header.frame_id)));
-			return;
+			throw std::runtime_error{ fmt::format("ik frame unknown in robot: '{}'", ik_pose_msg.header.frame_id) };
 		}
 		ik_pose = scene->getCurrentState().getFrameTransform(ik_pose_msg.header.frame_id) * ik_pose;
 
