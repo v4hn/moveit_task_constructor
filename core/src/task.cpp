@@ -87,7 +87,15 @@ struct TaskflowExecutor : public Executor, private tf::Executor
 	using tf::Executor::Executor;
 
 	void run(const std::string& name, std::function<void()>&& fn) override {
-		tf::Executor::silent_async(name, std::move(fn));
+		tf::Executor::silent_async(name, [fn, name] {
+			try {
+				fn();
+			} catch (const std::runtime_error& e) {
+				std::stringstream ss;
+				ss << "Stage '" << name << "' failed with runtime error:\n" << e.what();
+				ROS_ERROR_STREAM(ss.str());
+			}
+		});
 	}
 
 	void wait_for_all() override { tf::Executor::wait_for_all(); }
