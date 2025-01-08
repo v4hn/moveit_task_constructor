@@ -68,6 +68,7 @@ Connect::Connect(const std::string& name, const GroupPlannerVector& planners) : 
 void Connect::reset() {
 	Connecting::reset();
 	merged_jmg_.reset();
+	std::lock_guard<std::mutex> lock{ created_solutions_mutex_ };
 	subsolutions_.clear();
 	states_.clear();
 }
@@ -225,14 +226,17 @@ Connect::makeSequential(const std::vector<robot_trajectory::RobotTrajectoryConst
 
 	/* We need to decouple the sequence of subsolutions, created here, from the external from and to states.
 	   Hence, we create new interface states for all subsolutions. */
-	const InterfaceState* start = &*states_.insert(states_.end(), InterfaceState(from.scene()));
+	std::list<InterfaceState> new_states;
+	std::list<SubTrajectory> new_solutions;
+
+	const InterfaceState* start = &*new_states.insert(new_states.end(), InterfaceState(from.scene()));
 	const InterfaceState* end = nullptr;
 
 	auto scene_it = intermediate_scenes.begin();
 	SolutionSequence::container_type sub_solutions;
 	for (const auto& sub : sub_trajectories) {
 		// persistently store sub solution
-		auto inserted = subsolutions_.insert(subsolutions_.end(), SubTrajectory(sub));
+		auto inserted = new_solutions.insert(new_solutions.end(), SubTrajectory(sub));
 		inserted->setCreator(this);
 
 		// a null RobotTrajectoryPtr indicates a planner failure
@@ -250,10 +254,16 @@ Connect::makeSequential(const std::vector<robot_trajectory::RobotTrajectoryConst
 		end = &*states_.insert(states_.end(), InterfaceState(end_ps));
 
 		// provide newly created start/end states
-		subsolutions_.back().setStartState(*start);
-		subsolutions_.back().setEndState(*end);
+		inserted->setStartState(*start);
+		inserted->setEndState(*end);
 
 		start = end;  // end state becomes next start state
+	}
+
+	{
+		std::lock_guard<std::mutex> lock{ created_solutions_mutex_ };
+		subsolutions_.splice(subsolutions_.end(), new_solutions);
+		states_.splice(states_.end(), new_states);
 	}
 
 	return std::make_shared<SolutionSequence>(std::move(sub_solutions));

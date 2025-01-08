@@ -43,6 +43,8 @@
 
 #include <moveit_msgs/Constraints.h>
 
+#include <mutex>
+
 namespace moveit {
 namespace core {
 MOVEIT_CLASS_FORWARD(RobotState);
@@ -96,6 +98,8 @@ protected:
 protected:
 	std::vector<GroupPlannerVector> planners_;
 	moveit::core::JointModelGroupPtr merged_jmg_;
+
+	std::mutex created_solutions_mutex_;
 	std::list<SubTrajectory> subsolutions_;
 	std::list<InterfaceState> states_;
 };
