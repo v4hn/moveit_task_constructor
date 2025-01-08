@@ -152,6 +152,7 @@ void GeneratePlacePose::compute() {
 				return;
 			case shapes::MESH:
 				spawner(target_pose, z_flips, z_rotations);
+				return;
 			default:
 				break;
 		}
