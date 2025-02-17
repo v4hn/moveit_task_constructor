@@ -258,6 +258,7 @@ void ComputeIK::computeIK() {
 	const planning_scene::PlanningSceneConstPtr& scene{ s->start()->scene() };
 
 	const bool ignore_collisions = props.get<bool>("ignore_collisions");
+
 	const auto& robot_model = scene->getRobotModel();
 	const moveit::core::JointModelGroup* eef_jmg = nullptr;
 	const moveit::core::JointModelGroup* jmg = nullptr;
@@ -337,13 +338,13 @@ void ComputeIK::computeIK() {
 
 	// frames at target pose and ik frame
 	std::deque<visualization_msgs::Marker> frame_markers;
-	rviz_marker_tools::appendFrame(frame_markers, target_pose_msg, 0.1, "target frame");
-	rviz_marker_tools::appendFrame(frame_markers, ik_pose_msg, 0.1, "ik frame");
+	rviz_marker_tools::appendFrame(frame_markers, target_pose_msg, 0.1, name() + ": target pose");
+	rviz_marker_tools::appendFrame(frame_markers, ik_pose_msg, 0.1, name() + ": ik frame");
 	// end-effector markers
 	std::deque<visualization_msgs::Marker> eef_markers;
 	// visualize placed end-effector
-	auto appender = [&eef_markers](visualization_msgs::Marker& marker, const std::string& /*name*/) {
-		marker.ns = "ik target";
+	auto appender = [this, &eef_markers](visualization_msgs::Marker& marker, const std::string& /*name*/) {
+		marker.ns = name() + ": ik links";
 		marker.color.a *= 0.5;
 		eef_markers.push_back(marker);
 	};
@@ -364,7 +365,7 @@ void ComputeIK::computeIK() {
 				marker.pose.position.x = p.pos.x();
 				marker.pose.position.y = p.pos.y();
 				marker.pose.position.z = p.pos.z();
-				marker.ns = "eef collision point";
+				marker.ns = name() + ": eef collision point";
 				rviz_marker_tools::setColor(marker.color, rviz_marker_tools::Color::RED, 1.0);
 				eef_markers.push_back(marker);
 			}
@@ -454,7 +455,6 @@ void ComputeIK::computeIK() {
 			moveit::core::RobotState& solution_state = solution_scene->getCurrentStateNonConst();
 			solution_state.setJointGroupPositions(jmg, ik_solutions[i].joint_positions.data());
 			solution_state.update();
-
 			solution.setComment(s->comment());
 			std::copy(frame_markers.begin(), frame_markers.end(), std::back_inserter(solution.markers()));
 
