@@ -42,6 +42,7 @@
 #include <moveit/robot_trajectory/robot_trajectory.h>
 #include <moveit/planning_scene/planning_scene.h>
 #include <moveit/robot_state/conversions.h>
+#include <moveit/kinematics_metrics/kinematics_metrics.h>
 
 #include <Eigen/Geometry>
 

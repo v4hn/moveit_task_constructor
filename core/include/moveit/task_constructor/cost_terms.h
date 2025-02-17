@@ -234,6 +234,18 @@ protected:
 	mutable std::mutex engine_lock;
 };
 
+class Manipulability : public TrajectoryCostTerm
+{
+public:
+	Manipulability(std::string group_name, Mode mode = Mode::AUTO);
+
+	std::string group_name;
+	Mode mode;
+
+	using TrajectoryCostTerm::operator();
+	double operator()(const SubTrajectory& s, std::string& comment) const override;
+};
+
 }  // namespace cost
 }  // namespace task_constructor
 }  // namespace moveit
