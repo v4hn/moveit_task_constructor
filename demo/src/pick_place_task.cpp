@@ -168,6 +168,7 @@ bool PickPlaceTask::init() {
 	// TODO(v4hn): global storage for Introspection services to enable one-liner
 	task_.reset();
 	task_.reset(new moveit::task_constructor::Task("", /*introspection*/ false));
+	task_->enableIntrospection(true);
 
 	if (workers_ >= 0)
 		task_->setParallelExecutor(workers_);
