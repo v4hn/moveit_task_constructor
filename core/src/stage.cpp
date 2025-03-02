@@ -750,6 +750,10 @@ void MonitoringGenerator::init(const moveit::core::RobotModelConstPtr& robot_mod
 		impl->cb_ = impl->monitored_->addSolutionCallback([impl](const SolutionBase& s) { impl->solutionCB(s); });
 		impl->registered_ = true;
 	}
+
+	coparameter_extractor_ = [](const SolutionBase& s) {
+		return std::vector<double>{ std::numeric_limits<double>::quiet_NaN() };
+	};
 }
 
 void MonitoringGeneratorPrivate::solutionCB(const SolutionBase& s) {

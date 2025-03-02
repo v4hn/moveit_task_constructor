@@ -391,7 +391,7 @@ protected:
 };
 
 class MonitoringGeneratorPrivate;
-/** Generator that monitors solutions of another stage to make reuse of them
+/** Generator that monitors solutions of another stage to make use of them
  *
  * Sometimes its necessary to reuse a previously planned solution, e.g. to traverse
  * it in reverse order or to access the state of another generator.
@@ -402,16 +402,25 @@ class MonitoringGenerator : public Generator
 {
 public:
 	PRIVATE_CLASS(MonitoringGenerator)
+
+	// TODO: actually use coparameter extractor to only forward one solution from each coparameter
+	using CoParameterExtractor = std::function<std::vector<double>(const SolutionBase&)>;
+
 	MonitoringGenerator(const std::string& name = "monitoring generator", Stage* monitored = nullptr);
 	void setMonitoredStage(Stage* monitored);
 
 	void init(const moveit::core::RobotModelConstPtr& robot_model) override;
+
+	void setCoparameterExtractor(CoParameterExtractor extractor);
 
 protected:
 	MonitoringGenerator(MonitoringGeneratorPrivate* impl);
 
 	/// called by monitored stage when a new solution was generated
 	virtual void onNewSolution(const SolutionBase& s) = 0;
+
+private:
+	CoParameterExtractor coparameter_extractor_;
 };
 
 class ConnectingPrivate;
