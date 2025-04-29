@@ -38,6 +38,7 @@
 
 #include <moveit/task_constructor/solvers/multi_planner.h>
 #include <moveit/robot_trajectory/robot_trajectory.h>
+#include <moveit/trajectory_processing/time_parameterization.h>
 #include <chrono>
 
 namespace moveit {
@@ -47,6 +48,14 @@ namespace solvers {
 void MultiPlanner::init(const core::RobotModelConstPtr& robot_model) {
 	for (const auto& p : *this)
 		p->init(robot_model);
+}
+
+void retime(const moveit::task_constructor::PropertyMap& props, robot_trajectory::RobotTrajectory& trajectory){
+   // TODO: unconditionally overwriting timing means that child planners cannot set their own timing
+	auto timing = props.get<trajectory_processing::TimeParameterizationPtr>("time_parameterization");
+	if (timing)
+		timing->computeTimeStamps(trajectory, props.get<double>("max_velocity_scaling_factor"),
+								  props.get<double>("max_acceleration_scaling_factor"));
 }
 
 PlannerInterface::Result MultiPlanner::plan(const planning_scene::PlanningSceneConstPtr& from,
@@ -64,8 +73,10 @@ PlannerInterface::Result MultiPlanner::plan(const planning_scene::PlanningSceneC
 		if (result)
 			result->clear();
 		auto r = p->plan(from, to, jmg, remaining_time, result, path_constraints);
-		if (r)
+		if (r) {
+			retime(properties(), *result);
 			return r;
+		}
 		else
 			comment = r.message;
 
@@ -91,8 +102,10 @@ PlannerInterface::Result MultiPlanner::plan(const planning_scene::PlanningSceneC
 		if (result)
 			result->clear();
 		auto r = p->plan(from, link, offset, target, jmg, remaining_time, result, path_constraints);
-		if (r)
+		if (r) {
+			retime(properties(), *result);
 			return r;
+		}
 		else
 			comment = r.message;
 
