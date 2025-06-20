@@ -80,7 +80,7 @@ public:
 	void setEndEffector(const std::string& eef) { properties().set<std::string>("eef", eef); }
 	void setObject(const std::string& object) { properties().set<std::string>("object", object); }
 
-	solvers::CartesianPathPtr cartesianSolver() { return cartesian_solver_; }
+	solvers::CartesianPathPtr cartesianPlanner() { return cartesian_solver_; }
 
 	void setApproachRetract(const geometry_msgs::TwistStamped& motion, double min_distance, double max_distance);
 

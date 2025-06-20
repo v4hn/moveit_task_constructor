@@ -429,6 +429,9 @@ void export_stages(pybind11::module& m) {
 	    .property<std::string>("eef_frame", "str: Name of the end effector frame")
 	    .property<std::string>("eef_group", "str: Joint model group of the end effector")
 	    .property<std::string>("eef_parent_group", "str: Joint model group of the eef's parent")
+		.property<solvers::PlannerInterface>("cartesian_planner", [](Pick& s) -> solvers::PlannerInterfacePtr {
+			return std::static_pointer_cast<solvers::PlannerInterface>(s.cartesianPlanner());
+		}, "the planner instance used to compute Cartesian motions")
 	    .def(py::init<Stage::pointer&&, const std::string&>(), "grasp_generator"_a,
 	         "name"_a = std::string("pick"))
 	    .def("setApproachMotion", &Pick::setApproachMotion, R"(
