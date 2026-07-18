@@ -38,6 +38,7 @@
 
 #include <moveit/task_constructor/properties.h>
 #include <moveit/task_constructor/fmt_p.h>
+#include <boost/core/demangle.hpp>
 #include <functional>
 #include <ros/console.h>
 
