@@ -21,7 +21,7 @@ find_package(catkin REQUIRED COMPONENTS
 option(MOVEIT_CI_WARNINGS "Enable all warnings used by CI" OFF) # We use our own set of warnings
 moveit_build_options()
 
-catkin_python_setup()
+# catkin_python_setup()
 
 catkin_package(
 	LIBRARIES
@@ -44,7 +44,7 @@ add_compile_options(-fvisibility-inlines-hidden)
 set(PROJECT_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include/moveit/task_constructor)
 
 add_subdirectory(src)
-add_subdirectory(python)
+#add_subdirectory(python)
 add_subdirectory(test)
 
 install(DIRECTORY include/ DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
