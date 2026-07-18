@@ -955,8 +955,8 @@ bool Connecting::compatible(const InterfaceState& from_state, const InterfaceSta
 	const planning_scene::PlanningSceneConstPtr& from = from_state.scene();
 	const planning_scene::PlanningSceneConstPtr& to = to_state.scene();
 
-	auto false_with_debug = [](auto... args) {
-		ROS_DEBUG_STREAM_NAMED("Connecting", fmt::format(args...));
+	const auto false_with_debug = []<typename... Args>(fmt::format_string<Args...> format, Args&&... args) {
+		ROS_DEBUG_STREAM_NAMED("Connecting", fmt::format(format, std::forward<Args>(args)...));
 		return false;
 	};
 
